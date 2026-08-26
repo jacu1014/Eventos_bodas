@@ -1,0 +1,29 @@
+{
+  "name": "boda-digital",
+  "version": "1.0.0",
+  "description": "Plataforma integral para bodas con gestión de invitados, mesas y personalización total",
+  "main": "index.html",
+  "scripts": {
+    "dev": "echo 'Abrir index.html en el navegador'",
+    "test": "echo 'No tests configured yet'",
+    "build": "echo 'No build step required'",
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "boda",
+    "wedding",
+    "invitados",
+    "rsvp",
+    "album",
+    "supabase"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

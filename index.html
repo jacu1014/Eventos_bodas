@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invitación de Boda</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="./assets/css/custom.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="./assets/images/default-logo.png">
+</head>
+<body>
+    <!-- Main Content -->
+    <div id="app" x-data="landingApp()" x-init="init()">
+        <!-- Hero Section -->
+        <section class="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative" 
+                 :style="{ backgroundImage: `url(${config.fondo})`, backgroundSize: 'cover', backgroundPosition: 'center' }">
+            
+            <div class="absolute inset-0 bg-black/40"></div>
+            
+            <div class="relative z-10 text-center text-white max-w-3xl mx-auto">
+                <h1 class="text-5xl md:text-7xl font-serif font-bold mb-4" 
+                    :style="{ color: config.color_principal }">
+                    {{ config.titulo || '¡Nos Casamos!' }}
+                </h1>
+                
+                <p class="text-2xl md:text-3xl mb-2" x-text="config.novios || 'Carlos & María'"></p>
+                
+                <p class="text-xl md:text-2xl text-white/90 mt-8" x-text="config.fecha || 'Próximamente'"></p>
+                <p class="text-lg text-white/80 mt-2" x-text="config.ubicacion || 'En un lugar especial'"></p>
+                
+                <div class="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="#rsvp" class="px-8 py-3 rounded-full font-semibold transition-all hover:scale-105"
+                       :style="{ backgroundColor: config.color_principal, color: '#fff' }">
+                        Confirmar Asistencia
+                    </a>
+                    <a href="#detalles" class="px-8 py-3 rounded-full font-semibold border-2 border-white/50 hover:bg-white/10 transition-all">
+                        Ver Detalles
+                    </a>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Details Section -->
+        <section id="detalles" class="py-16 px-4 bg-white">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-4xl font-serif text-center mb-12" 
+                    :style="{ color: config.color_principal }">
+                    Detalles de la Boda
+                </h2>
+                
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="p-6 bg-gray-50 rounded-xl text-center">
+                        <h3 class="text-xl font-semibold mb-2">📅 Fecha</h3>
+                        <p class="text-lg" x-text="config.fecha || 'Por definir'"></p>
+                        <p class="text-sm text-gray-500 mt-1" x-text="config.hora || 'Hora por confirmar'"></p>
+                    </div>
+                    
+                    <div class="p-6 bg-gray-50 rounded-xl text-center">
+                        <h3 class="text-xl font-semibold mb-2">📍 Ubicación</h3>
+                        <p class="text-lg" x-text="config.ubicacion || 'Por definir'"></p>
+                        <a :href="config.url_maps || '#'" target="_blank" class="text-sm text-blue-500 hover:underline mt-1 inline-block">
+                            Ver en Google Maps
+                        </a>
+                    </div>
+                    
+                    <div class="p-6 bg-gray-50 rounded-xl text-center">
+                        <h3 class="text-xl font-semibold mb-2">👗 Código de Vestimenta</h3>
+                        <p class="text-lg" x-text="config.dresscode || 'Formal elegante'"></p>
+                    </div>
+                    
+                    <div class="p-6 bg-gray-50 rounded-xl text-center">
+                        <h3 class="text-xl font-semibold mb-2">🎁 Regalos</h3>
+                        <p class="text-lg" x-text="config.regalos || 'Lluvia de sobres'"></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- RSVP Section -->
+        <section id="rsvp" class="py-16 px-4 bg-gray-50">
+            <div class="max-w-2xl mx-auto">
+                <h2 class="text-4xl font-serif text-center mb-8" 
+                    :style="{ color: config.color_principal }">
+                    Confirma tu Asistencia
+                </h2>
+                
+                <form @submit.prevent="submitRSVP" class="bg-white p-8 rounded-xl shadow-lg">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
+                            <input type="text" x-model="rsvp.nombre" required
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" x-model="rsvp.email" required
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">¿Asistirás?</label>
+                            <select x-model="rsvp.asistira" required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Selecciona una opción</option>
+                                <option value="true">Sí, asistiré</option>
+                                <option value="false">No podré asistir</option>
+                            </select>
+                        </div>
+                        
+                        <div x-show="rsvp.asistira === 'true'">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Número de acompañantes</label>
+                            <input type="number" x-model="rsvp.acompanantes" min="0" max="10"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Menú</label>
+                            <select x-model="rsvp.menu"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Selecciona tu menú</option>
+                                <option value="carne">Carne</option>
+                                <option value="pescado">Pescado</option>
+                                <option value="vegetariano">Vegetariano</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Dietas especiales</label>
+                            <textarea x-model="rsvp.dietas" rows="2" placeholder="Alergias, intolerancias..."
+                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                        </div>
+                        
+                        <button type="submit"
+                                class="w-full py-3 rounded-lg font-semibold text-white transition-all hover:scale-105"
+                                :style="{ backgroundColor: config.color_principal }">
+                            Confirmar Asistencia
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+        
+        <!-- Wishlist Section -->
+        <section class="py-16 px-4 bg-white">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-4xl font-serif text-center mb-8" 
+                    :style="{ color: config.color_principal }">
+                    Muro de Deseos
+                </h2>
+                
+                <form @submit.prevent="submitWish" class="max-w-2xl mx-auto mb-8">
+                    <div class="flex gap-3">
+                        <input type="text" x-model="wish.texto" placeholder="Escribe tu mensaje de felicitación..." required
+                               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <button type="submit"
+                                class="px-6 py-2 rounded-lg text-white font-semibold"
+                                :style="{ backgroundColor: config.color_principal }">
+                            Publicar
+                        </button>
+                    </div>
+                    <input type="text" x-model="wish.nombre" placeholder="Tu nombre"
+                           class="w-full mt-2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </form>
+                
+                <div class="space-y-4 max-w-2xl mx-auto">
+                    <template x-for="(item, index) in wishes" :key="index">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="font-semibold" x-text="item.nombre || 'Anónimo'"></p>
+                            <p class="text-gray-700" x-text="item.texto"></p>
+                            <small class="text-gray-400" x-text="new Date(item.created_at).toLocaleDateString()"></small>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Footer -->
+        <footer class="py-8 px-4 bg-gray-900 text-white text-center">
+            <p class="text-sm opacity-75">
+                © <span x-text="new Date().getFullYear()"></span> - Con amor para nuestros invitados ❤️
+            </p>
+            <p class="text-xs opacity-50 mt-2">
+                <a href="/admin.html" class="hover:underline">Panel de Administración</a>
+            </p>
+        </footer>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="./assets/js/supabase-client.js"></script>
+    <script src="./assets/js/config.js"></script>
+    <script src="./assets/js/landing.js"></script>
+</body>
+</html>

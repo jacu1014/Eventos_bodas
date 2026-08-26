@@ -1,203 +1,615 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="scroll-smooth">
 <head>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invitación de Boda</title>
+    <title>Nuestra Boda 💍✨ | Valentina & Sebastián</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
     
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    
+    <!-- Supabase JS Client via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <!-- Custom Styles -->
     <link rel="stylesheet" href="./assets/css/custom.css">
     
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="./assets/images/default-logo.png">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #F6F9F7;
+            color: #1a1a1a;
+        }
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        .gold-gradient {
+            background: linear-gradient(135deg, #e2c56a 0%, #D4AF37 50%, #aa8620 100%);
+        }
+        .text-gold {
+            color: #D4AF37;
+        }
+        .emerald-gradient {
+            background: linear-gradient(135deg, #0F4C3A 0%, #08291f 100%);
+        }
+        
+        /* 3D Envelope Styles */
+        .envelope-container {
+            perspective: 1200px;
+        }
+        .envelope {
+            position: relative;
+            width: 320px;
+            max-width: 90vw;
+            height: 220px;
+            background: #fdfbf7;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            cursor: pointer;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid #D4AF37;
+        }
+        .envelope:hover {
+            transform: translateY(-8px) scale(1.02);
+        }
+        .wax-seal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 68px;
+            height: 68px;
+            background: linear-gradient(135deg, #D4AF37 0%, #a38125 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 2px dashed #ffffff;
+            z-index: 10;
+            animation: pulse 2s infinite ease-in-out;
+        }
+    </style>
 </head>
-<body>
-    <!-- Main Content -->
-    <div id="app" x-data="landingApp()" x-init="init()">
-        <!-- Hero Section -->
-        <section class="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative" 
-                 :style="{ backgroundImage: `url(${config.fondo})`, backgroundSize: 'cover', backgroundPosition: 'center' }">
+<body class="antialiased selection:bg-emerald-800 selection:text-white">
+    <div id="app" x-data="landingApp()" x-init="init()" x-cloak>
+        
+        <!-- ========================================================
+             NOTIFICACIÓN TOAST FLOTANTE
+             ======================================================== -->
+        <div x-show="showToast" x-transition
+             class="fixed bottom-6 right-6 z-50 bg-emerald-950 text-white border-2 border-amber-400 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3">
+            <span class="text-xl">✨</span>
+            <span class="text-sm font-semibold" x-text="toastMessage"></span>
+        </div>
+
+        <!-- ========================================================
+             SECCIÓN 1: SOBRE DE INVITACIÓN 3D (EXPERIENCIA INICIAL)
+             ======================================================== -->
+        <section x-show="!envelopeOpen" class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-emerald-950 via-emerald-900 to-teal-950 px-4 text-center">
+            <div class="mb-8">
+                <span class="text-amber-300 font-semibold tracking-widest text-xs uppercase">Invitación Exclusiva de Boda</span>
+                <h1 class="text-4xl md:text-5xl font-serif text-white mt-2 font-bold" x-text="config.novios || 'Valentina & Sebastián'"></h1>
+                
+                <!-- Saludo Personalizado si ya viene con Slug en URL -->
+                <div x-show="activeGuest" class="mt-2 text-amber-200 text-sm font-medium">
+                    <span x-text="`Para: ${activeGuest?.nombre} (${getMaxPasses()} pases reservados)`"></span>
+                </div>
+                
+                <p x-show="!activeGuest" class="text-emerald-200 text-xs md:text-sm mt-1">Haz clic en el sobre para abrir tu invitación</p>
+            </div>
             
-            <div class="absolute inset-0 bg-black/40"></div>
-            
-            <div class="relative z-10 text-center text-white max-w-3xl mx-auto">
-                <h1 class="text-5xl md:text-7xl font-serif font-bold mb-4" 
-                    :style="{ color: config.color_principal }">
-                    {{ config.titulo || '¡Nos Casamos!' }}
-                </h1>
-                
-                <p class="text-2xl md:text-3xl mb-2" x-text="config.novios || 'Carlos & María'"></p>
-                
-                <p class="text-xl md:text-2xl text-white/90 mt-8" x-text="config.fecha || 'Próximamente'"></p>
-                <p class="text-lg text-white/80 mt-2" x-text="config.ubicacion || 'En un lugar especial'"></p>
-                
-                <div class="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
-                    <a href="#rsvp" class="px-8 py-3 rounded-full font-semibold transition-all hover:scale-105"
-                       :style="{ backgroundColor: config.color_principal, color: '#fff' }">
-                        Confirmar Asistencia
-                    </a>
-                    <a href="#detalles" class="px-8 py-3 rounded-full font-semibold border-2 border-white/50 hover:bg-white/10 transition-all">
-                        Ver Detalles
-                    </a>
+            <div class="envelope-container" @click="openEnvelope">
+                <div class="envelope flex flex-col items-center justify-center p-6 text-center">
+                    <div class="wax-seal">
+                        <span class="text-white font-serif font-bold text-xl">V&S</span>
+                    </div>
+                    <div class="mt-auto text-xs text-gray-500 font-semibold uppercase tracking-widest">
+                        Toca para abrir ✨
+                    </div>
                 </div>
             </div>
         </section>
-        
-        <!-- Details Section -->
-        <section id="detalles" class="py-16 px-4 bg-white">
-            <div class="max-w-4xl mx-auto">
-                <h2 class="text-4xl font-serif text-center mb-12" 
-                    :style="{ color: config.color_principal }">
-                    Detalles de la Boda
-                </h2>
+
+        <!-- ========================================================
+             SECCIÓN 2: HERO BANNER & CUENTA REGRESIVA
+             ======================================================== -->
+        <div id="boda-invitacion" x-show="envelopeOpen" x-transition:enter="transition ease-out duration-700">
+            
+            <!-- Barra Superior VIP si el invitado fue reconocido -->
+            <div x-show="activeGuest" class="bg-emerald-900 text-amber-200 border-b border-amber-400/50 py-2.5 px-4 text-center text-xs md:text-sm font-medium flex items-center justify-center gap-2">
+                <span>💍</span>
+                <span>¡Hola <strong class="text-white" x-text="activeGuest?.nombre"></strong>! Tienes <strong class="text-white" x-text="getMaxPasses()"></strong> pase(s) reservado(s) para nuestra boda.</span>
+                <a href="#confirmacion" class="underline font-bold text-amber-300 ml-2 hover:text-white">Confirmar ahora →</a>
+            </div>
+
+            <!-- Hero Principal -->
+            <header class="relative min-h-[90vh] flex items-center justify-center text-center text-white overflow-hidden">
+                <div class="absolute inset-0 bg-cover bg-center z-0 scale-105 transition-transform duration-1000"
+                     :style="`background-image: url('${config.hero_image_url || config.fondo}');`"></div>
+                <div class="absolute inset-0 bg-gradient-to-b from-emerald-950/70 via-black/50 to-emerald-950/90 z-10"></div>
                 
-                <div class="grid md:grid-cols-2 gap-8">
-                    <div class="p-6 bg-gray-50 rounded-xl text-center">
-                        <h3 class="text-xl font-semibold mb-2">📅 Fecha</h3>
-                        <p class="text-lg" x-text="config.fecha || 'Por definir'"></p>
-                        <p class="text-sm text-gray-500 mt-1" x-text="config.hora || 'Hora por confirmar'"></p>
+                <div class="relative z-20 max-w-4xl px-4 py-20 space-y-6">
+                    <div class="inline-block px-4 py-1.5 rounded-full border border-amber-400/60 bg-emerald-950/60 backdrop-blur-xs text-amber-300 text-xs uppercase tracking-widest font-semibold">
+                        ¡Nos Casamos! 💍
                     </div>
                     
-                    <div class="p-6 bg-gray-50 rounded-xl text-center">
-                        <h3 class="text-xl font-semibold mb-2">📍 Ubicación</h3>
-                        <p class="text-lg" x-text="config.ubicacion || 'Por definir'"></p>
-                        <a :href="config.url_maps || '#'" target="_blank" class="text-sm text-blue-500 hover:underline mt-1 inline-block">
-                            Ver en Google Maps
+                    <h1 class="text-5xl md:text-7xl font-serif font-bold text-white tracking-tight drop-shadow-md"
+                        x-text="config.novios || 'Valentina & Sebastián'"></h1>
+                    
+                    <p class="text-base md:text-xl font-serif italic text-emerald-100 max-w-2xl mx-auto leading-relaxed"
+                       x-text="`&ldquo;${config.frase_amor || 'El amor no se mira, se siente.'}&rdquo;`"></p>
+                    
+                    <!-- Contador Regresivo -->
+                    <div class="pt-6">
+                        <div class="grid grid-cols-4 gap-2 md:gap-3 max-w-md mx-auto">
+                            <div class="bg-white/10 backdrop-blur-md border border-amber-400/40 p-3 rounded-2xl">
+                                <span class="block text-2xl md:text-4xl font-bold font-serif text-amber-300" x-text="countdown.dias">00</span>
+                                <span class="text-[10px] md:text-xs uppercase tracking-widest text-emerald-200">Días</span>
+                            </div>
+                            <div class="bg-white/10 backdrop-blur-md border border-amber-400/40 p-3 rounded-2xl">
+                                <span class="block text-2xl md:text-4xl font-bold font-serif text-amber-300" x-text="countdown.horas">00</span>
+                                <span class="text-[10px] md:text-xs uppercase tracking-widest text-emerald-200">Horas</span>
+                            </div>
+                            <div class="bg-white/10 backdrop-blur-md border border-amber-400/40 p-3 rounded-2xl">
+                                <span class="block text-2xl md:text-4xl font-bold font-serif text-amber-300" x-text="countdown.minutos">00</span>
+                                <span class="text-[10px] md:text-xs uppercase tracking-widest text-emerald-200">Minutos</span>
+                            </div>
+                            <div class="bg-white/10 backdrop-blur-md border border-amber-400/40 p-3 rounded-2xl">
+                                <span class="block text-2xl md:text-4xl font-bold font-serif text-amber-300" x-text="countdown.segundos">00</span>
+                                <span class="text-[10px] md:text-xs uppercase tracking-widest text-emerald-200">Segundos</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botón Rápido Confirmar -->
+                    <div class="pt-4">
+                        <a href="#confirmacion" class="inline-flex items-center gap-2 px-8 py-3.5 rounded-full gold-gradient text-emerald-950 font-bold shadow-xl hover:scale-105 transition-all text-xs md:text-sm uppercase tracking-wider">
+                            ✨ Confirmar Asistencia
                         </a>
                     </div>
-                    
-                    <div class="p-6 bg-gray-50 rounded-xl text-center">
-                        <h3 class="text-xl font-semibold mb-2">👗 Código de Vestimenta</h3>
-                        <p class="text-lg" x-text="config.dresscode || 'Formal elegante'"></p>
+                </div>
+            </header>
+
+            <!-- ========================================================
+                 SECCIÓN 3: DETALLES DEL EVENTO (CEREMONIA & RECEPCIÓN)
+                 ======================================================== -->
+            <section class="py-16 md:py-20 px-4 bg-white">
+                <div class="max-w-5xl mx-auto">
+                    <div class="text-center mb-12 md:mb-16 space-y-2">
+                        <span class="text-xs uppercase tracking-widest font-bold text-amber-600">Dónde & Cuándo</span>
+                        <h2 class="text-3xl md:text-4xl font-serif font-bold text-emerald-950">Detalles de la Celebración</h2>
+                        <div class="w-16 h-0.5 bg-amber-400 mx-auto mt-2"></div>
                     </div>
                     
-                    <div class="p-6 bg-gray-50 rounded-xl text-center">
-                        <h3 class="text-xl font-semibold mb-2">🎁 Regalos</h3>
-                        <p class="text-lg" x-text="config.regalos || 'Lluvia de sobres'"></p>
+                    <div class="grid md:grid-cols-2 gap-6 md:gap-8">
+                        <!-- Ceremonia -->
+                        <div class="bg-gray-50 border border-emerald-100 rounded-3xl p-6 md:p-8 text-center space-y-4 hover:shadow-lg transition-all">
+                            <div class="text-4xl">⛪</div>
+                            <h3 class="text-xl md:text-2xl font-serif font-bold text-emerald-950">Ceremonia Religiosa</h3>
+                            <div class="text-amber-700 font-semibold text-xs md:text-sm">4:00 PM • Sábado 24 de Octubre de 2026</div>
+                            <p class="text-gray-600 text-sm font-medium" x-text="config.lugar_ceremonia || 'Capilla Nuestra Señora del Carmen'"></p>
+                            <p class="text-xs text-gray-500" x-text="config.direccion_ceremonia || 'Calle 10 # 5-20, Zona Colonial'"></p>
+                            <div class="pt-2">
+                                <a :href="config.maps_ceremonia_url || '#'" target="_blank"
+                                   class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-900 text-white text-xs font-semibold hover:bg-emerald-950 transition-all">
+                                    📍 Abrir en Google Maps
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Recepción -->
+                        <div class="bg-gray-50 border border-emerald-100 rounded-3xl p-6 md:p-8 text-center space-y-4 hover:shadow-lg transition-all">
+                            <div class="text-4xl">🥂</div>
+                            <h3 class="text-xl md:text-2xl font-serif font-bold text-emerald-950">Recepción & Fiesta</h3>
+                            <div class="text-amber-700 font-semibold text-xs md:text-sm">6:00 PM en adelante</div>
+                            <p class="text-gray-600 text-sm font-medium" x-text="config.lugar_recepcion || 'Hacienda Campestre La Esmeralda'"></p>
+                            <p class="text-xs text-gray-500" x-text="config.direccion_recepcion || 'Km 12 Vía Campestre, Valle Verde'"></p>
+                            <div class="pt-2">
+                                <a :href="config.maps_recepcion_url || '#'" target="_blank"
+                                   class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-900 text-white text-xs font-semibold hover:bg-emerald-950 transition-all">
+                                    📍 Abrir en Google Maps
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Código de Vestimenta -->
+                    <div class="mt-10 bg-emerald-50/50 border border-emerald-100 rounded-3xl p-6 md:p-8 text-center max-w-2xl mx-auto space-y-4">
+                        <div class="text-3xl">👗 👔</div>
+                        <h3 class="text-xl font-serif font-bold text-emerald-950">Código de Vestimenta</h3>
+                        <p class="text-xs md:text-sm text-gray-700" x-text="config.dress_code || 'Formal / Etiqueta Rigurosa'"></p>
+                        
+                        <!-- Swatches de Colores -->
+                        <div x-show="config.dress_code_colors && config.dress_code_colors.length > 0" class="pt-2">
+                            <span class="text-xs text-gray-500 block mb-2 font-medium">Paleta sugerida:</span>
+                            <div class="flex justify-center gap-3 flex-wrap">
+                                <template x-for="(col, i) in config.dress_code_colors" :key="i">
+                                    <div class="flex flex-col items-center">
+                                        <div class="w-7 h-7 rounded-full border-2 border-white shadow-xs" :style="{ backgroundColor: col.hex }"></div>
+                                        <span class="text-[10px] text-gray-600 mt-1" x-text="col.name"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
-        
-        <!-- RSVP Section -->
-        <section id="rsvp" class="py-16 px-4 bg-gray-50">
-            <div class="max-w-2xl mx-auto">
-                <h2 class="text-4xl font-serif text-center mb-8" 
-                    :style="{ color: config.color_principal }">
-                    Confirma tu Asistencia
-                </h2>
-                
-                <form @submit.prevent="submitRSVP" class="bg-white p-8 rounded-xl shadow-lg">
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
-                            <input type="text" x-model="rsvp.nombre" required
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
+            </section>
+
+            <!-- ========================================================
+                 SECCIÓN 4: NUESTRA HISTORIA (CARRUSEL INTERACTIVO)
+                 ======================================================== -->
+            <section x-show="config.galeria_fotos && config.galeria_fotos.length > 0" class="py-16 md:py-20 px-4 bg-emerald-950 text-white">
+                <div class="max-w-4xl mx-auto text-center space-y-8">
+                    <div class="space-y-2">
+                        <span class="text-xs uppercase tracking-widest font-bold text-amber-300">Recuerdos Inolvidables</span>
+                        <h2 class="text-3xl md:text-4xl font-serif font-bold text-white">Nuestra Historia</h2>
+                        <div class="w-16 h-0.5 bg-amber-400 mx-auto mt-2"></div>
+                    </div>
+                    
+                    <div class="relative bg-emerald-900/60 rounded-3xl p-4 md:p-6 border border-emerald-800 shadow-2xl">
+                        <template x-for="(item, idx) in config.galeria_fotos" :key="idx">
+                            <div x-show="currentHistorySlide === idx" x-transition class="space-y-4">
+                                <img :src="item.url" class="w-full h-64 md:h-[450px] object-cover rounded-2xl shadow-md" loading="lazy">
+                                <div class="pt-2">
+                                    <h4 class="text-xl md:text-2xl font-serif font-bold text-amber-300" x-text="item.titulo"></h4>
+                                    <p class="text-xs md:text-sm text-emerald-100 max-w-xl mx-auto mt-1" x-text="item.descripcion"></p>
+                                </div>
+                            </div>
+                        </template>
                         
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input type="email" x-model="rsvp.email" required
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <div class="flex justify-between items-center mt-4 pt-3 border-t border-emerald-800/60 text-xs">
+                            <button @click="currentHistorySlide = (currentHistorySlide - 1 + config.galeria_fotos.length) % config.galeria_fotos.length"
+                                    class="p-2 text-emerald-200 hover:text-white">◀ Anterior</button>
+                            <div class="flex gap-1.5">
+                                <template x-for="(item, idx) in config.galeria_fotos" :key="idx">
+                                    <div @click="currentHistorySlide = idx" class="w-2 h-2 rounded-full cursor-pointer transition-all"
+                                         :class="currentHistorySlide === idx ? 'bg-amber-400 w-5' : 'bg-emerald-700'"></div>
+                                </template>
+                            </div>
+                            <button @click="currentHistorySlide = (currentHistorySlide + 1) % config.galeria_fotos.length"
+                                    class="p-2 text-emerald-200 hover:text-white">Siguiente ▶</button>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================
+                 SECCIÓN 5: FORMULARIO RSVP DE CONFIRMACIÓN EXCLUSIVA
+                 ======================================================== -->
+            <section id="confirmacion" class="py-16 md:py-20 px-4 bg-white">
+                <div class="max-w-2xl mx-auto">
+                    <div class="text-center mb-10 space-y-2">
+                        <span class="text-xs uppercase tracking-widest font-bold text-amber-600">Tu Presencia es Nuestro Regalo</span>
+                        <h2 class="text-3xl md:text-4xl font-serif font-bold text-emerald-950">Confirmación de Asistencia</h2>
+                        <p class="text-xs md:text-sm text-gray-500">Por favor confirma antes del 20 de Septiembre de 2026</p>
+                        <div class="w-16 h-0.5 bg-amber-400 mx-auto mt-2"></div>
+                    </div>
+                    
+                    <!-- Confirmación Exitosa -->
+                    <div x-show="rsvpSuccess" class="p-8 bg-emerald-50 border border-emerald-300 rounded-3xl text-center space-y-4 shadow-xs">
+                        <div class="text-5xl">🎉 🥂</div>
+                        <h3 class="text-2xl font-serif font-bold text-emerald-950">¡Confirmación Guardada!</h3>
+                        <p class="text-sm text-gray-700">Muchas gracias por confirmar tu asistencia. ¡Estamos muy emocionados de celebrar juntos este día tan especial!</p>
+                    </div>
+                    
+                    <div x-show="!rsvpSuccess" class="space-y-6">
                         
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">¿Asistirás?</label>
-                            <select x-model="rsvp.asistira" required
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="">Selecciona una opción</option>
-                                <option value="true">Sí, asistiré</option>
-                                <option value="false">No podré asistir</option>
-                            </select>
+                        <!-- Buscador Inteligente si NO tiene Invitado Activo -->
+                        <div x-show="!activeGuest" class="bg-amber-50/60 border border-amber-200 p-6 rounded-3xl space-y-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xl">🔍</span>
+                                <h4 class="font-bold text-sm text-emerald-950">Busca tu Invitación Personal</h4>
+                            </div>
+                            <p class="text-xs text-gray-600">Ingresa tu nombre o apellido para encontrar tu tarjeta y confirmar tus cupos reservados:</p>
+                            
+                            <div class="flex gap-2">
+                                <input type="text" x-model="searchQuery" @keyup.enter="searchGuest" placeholder="Ej: Carlos Mendoza o Familia Gómez..."
+                                       class="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl text-xs md:text-sm bg-white focus:ring-2 focus:ring-emerald-700">
+                                <button type="button" @click="searchGuest" class="px-5 py-2.5 rounded-xl bg-emerald-900 text-white text-xs font-bold shadow-xs">
+                                    Buscar
+                                </button>
+                            </div>
+                            
+                            <!-- Resultados de Búsqueda -->
+                            <div x-show="searchResults.length > 0" class="space-y-2 pt-2">
+                                <span class="text-xs font-semibold text-emerald-900 block">Selecciona tu nombre:</span>
+                                <div class="grid gap-2">
+                                    <template x-for="res in searchResults" :key="res.id">
+                                        <div @click="selectGuestForRSVP(res)"
+                                             class="p-3 bg-white hover:bg-emerald-50 border border-gray-200 hover:border-emerald-500 rounded-xl cursor-pointer transition-all flex items-center justify-between text-xs">
+                                            <div>
+                                                <strong class="text-emerald-950 text-sm" x-text="res.nombre"></strong>
+                                                <span class="text-gray-500 text-[11px] block" x-text="`${(res.pases_adultos || 1) + (res.pases_ninos || 0)} pases asignados`"></span>
+                                            </div>
+                                            <span class="px-3 py-1 bg-emerald-900 text-white rounded-lg font-bold text-[10px]">Confirmar Esta Invitación →</span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            
+                            <div x-show="searchSearched && searchResults.length === 0" class="p-3 bg-red-50 text-red-700 rounded-xl text-xs text-center font-medium">
+                                No encontramos una invitación registrada con ese nombre. Por favor comunícate directamente con los novios.
+                            </div>
                         </div>
+
+                        <!-- Formulario Activo para el Invitado Reconocido -->
+                        <form x-show="activeGuest" @submit.prevent="submitRSVP" class="bg-gray-50 p-6 md:p-8 rounded-3xl border border-gray-200 shadow-xs space-y-5">
+                            
+                            <!-- Tarjeta de Identificación del Invitado -->
+                            <div class="bg-emerald-900 text-white p-4 rounded-2xl flex items-center justify-between">
+                                <div>
+                                    <span class="text-[10px] text-amber-300 uppercase tracking-widest font-semibold block">Invitación Confirmada para:</span>
+                                    <h4 class="text-lg font-bold font-serif" x-text="activeGuest?.nombre"></h4>
+                                    <span class="text-xs text-emerald-200" x-text="`Cupo máximo reservado: ${getMaxPasses()} persona(s)`"></span>
+                                </div>
+                                <button type="button" @click="activeGuest = null" class="text-xs text-amber-200 hover:text-white underline">Cambiar</button>
+                            </div>
+                            
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">Email de Contacto</label>
+                                    <input type="email" x-model="rsvp.email" placeholder="correo@ejemplo.com"
+                                           class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-xs md:text-sm bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">Teléfono / WhatsApp</label>
+                                    <input type="text" x-model="rsvp.telefono" placeholder="+57 300 123 4567"
+                                           class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-xs md:text-sm bg-white">
+                                </div>
+                            </div>
+                            
+                            <!-- Asistencia -->
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">¿Nos acompañarás? *</label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <label class="p-3 border rounded-xl flex items-center gap-2 cursor-pointer bg-white"
+                                           :class="rsvp.asistira === 'true' ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-bold' : 'border-gray-200'">
+                                        <input type="radio" x-model="rsvp.asistira" value="true" class="text-emerald-700">
+                                        <span class="text-xs">¡Sí, allí estaré! 🥂</span>
+                                    </label>
+                                    <label class="p-3 border rounded-xl flex items-center gap-2 cursor-pointer bg-white"
+                                           :class="rsvp.asistira === 'false' ? 'border-red-600 bg-red-50 text-red-900 font-bold' : 'border-gray-200'">
+                                        <input type="radio" x-model="rsvp.asistira" value="false" class="text-emerald-700">
+                                        <span class="text-xs">No podré asistir 😢</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Opciones si asiste -->
+                            <div x-show="rsvp.asistira === 'true'" class="space-y-4 pt-2">
+                                <div class="grid md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                                            Acompañantes que asistirán
+                                            <span class="text-gray-400 font-normal" x-text="`(Máx: ${getMaxPasses() - 1})`"></span>
+                                        </label>
+                                        <select x-model="rsvp.acompanantes" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-xs md:text-sm bg-white">
+                                            <template x-for="n in getMaxPasses()" :key="n">
+                                                <option :value="n - 1" x-text="n === 1 ? 'Solo yo (1 pase)' : `${n} personas (${n - 1} acompañantes)`"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">Preferencia de Menú</label>
+                                        <select x-model="rsvp.menu" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-xs md:text-sm bg-white">
+                                            <option value="Tradicional">Tradicional (Carne / Ave)</option>
+                                            <option value="Vegetariano">Vegetariano</option>
+                                            <option value="Vegano">Vegano</option>
+                                            <option value="Celíaco">Celíaco / Sin Gluten</option>
+                                            <option value="Infantil">Menú Infantil</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">Alergias o Restricciones Alimentarias</label>
+                                    <input type="text" x-model="rsvp.dietas" placeholder="Ej: Alergia a nueces, mariscos, intolerancia a la lactosa..."
+                                           class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-xs md:text-sm bg-white">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">🎵 Canción sugerida para el DJ</label>
+                                    <input type="text" x-model="rsvp.cancion_sugerida" placeholder="Título y Artista que quieres bailar"
+                                           class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-xs md:text-sm bg-white">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">💌 Mensaje o Dedicatoria para los Novios</label>
+                                <textarea x-model="rsvp.mensaje_dedicatoria" rows="3" placeholder="Escribe tus buenos deseos..."
+                                          class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-xs md:text-sm bg-white"></textarea>
+                            </div>
+                            
+                            <button type="submit"
+                                    class="w-full py-4 rounded-xl text-white font-bold text-xs md:text-sm uppercase tracking-wider shadow-lg hover:opacity-95 transition-all"
+                                    :style="{ backgroundColor: config.color_principal || '#0F4C3A' }"
+                                    :disabled="loadingRSVP">
+                                <span x-show="!loadingRSVP">Guardar Mi Confirmación ✨</span>
+                                <span x-show="loadingRSVP">Procesando...</span>
+                            </button>
+                            
+                            <p x-show="rsvpError" class="text-red-500 text-xs font-semibold text-center" x-text="rsvpError"></p>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================
+                 SECCIÓN 6: LLUVIA DE SOBRES & MÚLTIPLES CUENTAS BANCARIAS
+                 ======================================================== -->
+            <section class="py-16 md:py-20 px-4 bg-gray-50 border-t border-b border-gray-200">
+                <div class="max-w-4xl mx-auto text-center space-y-8">
+                    <div class="space-y-2">
+                        <div class="text-4xl">✉️ 🎁</div>
+                        <span class="text-xs uppercase tracking-widest font-bold text-amber-600">Lluvia de Sobres & Regalos</span>
+                        <h2 class="text-3xl md:text-4xl font-serif font-bold text-emerald-950">Mesa de Regalos & Cuentas</h2>
+                        <p class="text-xs md:text-sm text-gray-600 max-w-xl mx-auto" x-text="config.frase_regalos"></p>
+                        <div class="w-16 h-0.5 bg-amber-400 mx-auto mt-2"></div>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-6 text-left">
+                        <template x-for="(cta, idx) in config.cuentas_bancarias" :key="idx">
+                            <div class="bg-white p-6 rounded-3xl border border-amber-200/80 shadow-xs space-y-4 hover:shadow-md transition-all">
+                                <div class="flex justify-between items-center">
+                                    <h4 class="font-bold text-base md:text-lg text-emerald-950" x-text="`🏦 ${cta.banco_nombre}`"></h4>
+                                    <span class="text-[10px] px-2.5 py-1 bg-amber-50 text-amber-800 rounded-full font-semibold" x-text="cta.banco_tipo_cuenta"></span>
+                                </div>
+                                
+                                <div class="space-y-1 text-xs text-gray-600">
+                                    <div>Número de Cuenta: <strong class="text-gray-900 font-mono text-sm block" x-text="cta.banco_numero_cuenta"></strong></div>
+                                    <div>Titular: <span class="font-medium text-gray-900" x-text="cta.banco_titular"></span></div>
+                                    <div x-show="cta.banco_documento">C.C. / NIT: <span class="font-medium text-gray-900" x-text="cta.banco_documento"></span></div>
+                                    <div x-show="cta.banco_llave_breb" class="text-amber-800 font-bold pt-1">⚡ Llave Bre-B: <span class="font-mono" x-text="cta.banco_llave_breb"></span></div>
+                                </div>
+                                
+                                <div class="flex gap-2 pt-2 border-t border-gray-100">
+                                    <button @click="copyToClipboard(cta.banco_numero_cuenta, `Número de cuenta ${cta.banco_nombre} copiado`)"
+                                            class="flex-1 py-2 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 rounded-xl text-xs font-bold text-center transition-all">
+                                        📋 Copiar Cuenta
+                                    </button>
+                                    <button x-show="cta.banco_llave_breb"
+                                            @click="copyToClipboard(cta.banco_llave_breb, `Llave Bre-B ${cta.banco_llave_breb} copiada`)"
+                                            class="flex-1 py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-xl text-xs font-bold text-center transition-all">
+                                        ⚡ Copiar Bre-B
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================
+                 SECCIÓN 7: MURO DE DESEOS & DEDICATORIAS
+                 ======================================================== -->
+            <section class="py-16 md:py-20 px-4 bg-white">
+                <div class="max-w-4xl mx-auto text-center space-y-8">
+                    <div class="space-y-2">
+                        <span class="text-xs uppercase tracking-widest font-bold text-amber-600">Palabras de Amor</span>
+                        <h2 class="text-3xl md:text-4xl font-serif font-bold text-emerald-950">Muro de Deseos</h2>
+                        <div class="w-16 h-0.5 bg-amber-400 mx-auto mt-2"></div>
+                    </div>
+                    
+                    <div class="relative min-h-[140px] bg-emerald-50/50 p-6 md:p-8 rounded-3xl border border-emerald-100">
+                        <template x-for="(wish, idx) in wishes" :key="idx">
+                            <div x-show="currentWishSlide === idx" x-transition class="space-y-2">
+                                <p class="text-base md:text-xl font-serif italic text-gray-800" x-text="`&ldquo;${wish.texto || wish.mensaje}&rdquo;`"></p>
+                                <span class="font-bold text-emerald-950 text-xs md:text-sm block" x-text="`— ${wish.nombre || wish.autor}`"></span>
+                            </div>
+                        </template>
+                        <p x-show="wishes.length === 0" class="text-gray-400 text-xs">Sé el primero en dejar sus felicitaciones en el formulario de confirmación.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================
+                 SECCIÓN 8: ÁLBUM DE FOTOS COMPARTIDO EN VIVO
+                 ======================================================== -->
+            <section class="py-16 md:py-20 px-4 bg-emerald-950 text-white">
+                <div class="max-w-5xl mx-auto text-center space-y-8">
+                    <div class="space-y-2">
+                        <span class="text-xs uppercase tracking-widest font-bold text-amber-300">Momentos Inolvidables</span>
+                        <h2 class="text-3xl md:text-4xl font-serif font-bold text-white">Álbum de Fotos en Vivo</h2>
+                        <p class="text-xs md:text-sm text-emerald-200">Comparte las fotos que tomes durante el evento</p>
+                        <div class="w-16 h-0.5 bg-amber-400 mx-auto mt-2"></div>
+                    </div>
+                    
+                    <div x-show="config.album_pausado" class="p-4 bg-amber-500/20 border border-amber-400 text-amber-200 rounded-2xl text-xs">
+                        ⏸️ El álbum se encuentra temporalmente en pausa por los novios.
+                    </div>
+                    
+                    <div class="flex justify-center gap-3 flex-wrap">
+                        <button x-show="!config.album_pausado" @click="showUploadModal = true"
+                                class="px-6 py-3 rounded-full gold-gradient text-emerald-950 font-bold text-xs md:text-sm shadow-xl hover:scale-105 transition-all">
+                            📸 Subir una Foto Ahora
+                        </button>
                         
-                        <div x-show="rsvp.asistira === 'true'">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Número de acompañantes</label>
-                            <input type="number" x-model="rsvp.acompanantes" min="0" max="10"
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Menú</label>
-                            <select x-model="rsvp.menu"
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="">Selecciona tu menú</option>
-                                <option value="carne">Carne</option>
-                                <option value="pescado">Pescado</option>
-                                <option value="vegetariano">Vegetariano</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Dietas especiales</label>
-                            <textarea x-model="rsvp.dietas" rows="2" placeholder="Alergias, intolerancias..."
-                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
-                        </div>
-                        
-                        <button type="submit"
-                                class="w-full py-3 rounded-lg font-semibold text-white transition-all hover:scale-105"
-                                :style="{ backgroundColor: config.color_principal }">
-                            Confirmar Asistencia
+                        <button x-show="config.descarga_publica_habilitada" @click="openPrintableAlbum"
+                                class="px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-amber-400/60 text-amber-200 font-bold text-xs md:text-sm transition-all">
+                            📖 Descargar / Imprimir Álbum
                         </button>
                     </div>
-                </form>
-            </div>
-        </section>
-        
-        <!-- Wishlist Section -->
-        <section class="py-16 px-4 bg-white">
-            <div class="max-w-4xl mx-auto">
-                <h2 class="text-4xl font-serif text-center mb-8" 
-                    :style="{ color: config.color_principal }">
-                    Muro de Deseos
-                </h2>
-                
-                <form @submit.prevent="submitWish" class="max-w-2xl mx-auto mb-8">
-                    <div class="flex gap-3">
-                        <input type="text" x-model="wish.texto" placeholder="Escribe tu mensaje de felicitación..." required
-                               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <button type="submit"
-                                class="px-6 py-2 rounded-lg text-white font-semibold"
-                                :style="{ backgroundColor: config.color_principal }">
-                            Publicar
-                        </button>
+                    
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4 pt-4">
+                        <template x-for="foto in photos" :key="foto.id">
+                            <div class="bg-emerald-900/60 rounded-2xl overflow-hidden border border-emerald-800 shadow-md">
+                                <img :src="foto.url || foto.foto_url" class="w-full h-36 md:h-44 object-cover" loading="lazy">
+                                <div class="p-2 text-left">
+                                    <p class="font-bold text-[11px] text-amber-300 truncate" x-text="foto.nombre_subidor || foto.autor_nombre || 'Invitado'"></p>
+                                    <p class="text-[10px] text-emerald-100 truncate" x-text="foto.titulo || foto.pie_de_foto || ''"></p>
+                                </div>
+                            </div>
+                        </template>
                     </div>
-                    <input type="text" x-model="wish.nombre" placeholder="Tu nombre"
-                           class="w-full mt-2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                </form>
-                
-                <div class="space-y-4 max-w-2xl mx-auto">
-                    <template x-for="(item, index) in wishes" :key="index">
-                        <div class="p-4 bg-gray-50 rounded-lg">
-                            <p class="font-semibold" x-text="item.nombre || 'Anónimo'"></p>
-                            <p class="text-gray-700" x-text="item.texto"></p>
-                            <small class="text-gray-400" x-text="new Date(item.created_at).toLocaleDateString()"></small>
+                </div>
+            </section>
+
+            <!-- Modal Subir Foto (con compresión) -->
+            <div x-show="showUploadModal" class="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+                <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl text-gray-900 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-serif font-bold text-emerald-950">📸 Subir Foto al Álbum</h3>
+                        <button @click="showUploadModal = false" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+                    </div>
+                    
+                    <form @submit.prevent="uploadPhoto" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-gray-700 mb-1">Tu Nombre *</label>
+                            <input type="text" x-model="uploadData.nombre" required placeholder="¿Quién toma la foto?"
+                                   class="w-full px-3 py-2 border rounded-xl text-xs">
                         </div>
-                    </template>
+                        
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-gray-700 mb-1">Dedicatoria (Opcional)</label>
+                            <input type="text" x-model="uploadData.titulo" placeholder="Ej: ¡Brindis con los novios!"
+                                   class="w-full px-3 py-2 border rounded-xl text-xs">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-gray-700 mb-1">Foto *</label>
+                            <input type="file" accept="image/*" @change="handlePhotoSelect" required
+                                   class="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-900">
+                        </div>
+                        
+                        <div x-show="uploadData.preview" class="pt-1">
+                            <img :src="uploadData.preview" class="w-full h-36 object-cover rounded-xl border border-gray-200">
+                        </div>
+                        
+                        <button type="submit" class="w-full py-3 rounded-xl gold-gradient text-emerald-950 font-bold text-xs shadow-md"
+                                :disabled="uploadData.uploading">
+                            <span x-show="!uploadData.uploading">Publicar Foto ✨</span>
+                            <span x-show="uploadData.uploading">Optimizando y subiendo...</span>
+                        </button>
+                    </form>
                 </div>
             </div>
-        </section>
-        
-        <!-- Footer -->
-        <footer class="py-8 px-4 bg-gray-900 text-white text-center">
-            <p class="text-sm opacity-75">
-                © <span x-text="new Date().getFullYear()"></span> - Con amor para nuestros invitados ❤️
-            </p>
-            <p class="text-xs opacity-50 mt-2">
-                <a href="/admin.html" class="hover:underline">Panel de Administración</a>
-            </p>
-        </footer>
+
+            <!-- Footer -->
+            <footer class="py-10 px-4 bg-emerald-950 text-white text-center border-t border-emerald-900 space-y-2">
+                <p class="text-xs md:text-sm font-serif italic text-emerald-200">Con todo nuestro amor, los esperamos para celebrar juntos este día inolvidable.</p>
+                <p class="text-[11px] text-emerald-400">© <span x-text="new Date().getFullYear()"></span> Boda Valentina & Sebastián</p>
+                <div class="pt-1">
+                    <a href="/admin.html" class="text-[10px] text-amber-300/80 hover:text-amber-300 underline">Acceso Panel de los Novios</a>
+                </div>
+            </footer>
+        </div>
     </div>
-    
+
     <!-- Scripts -->
     <script src="./assets/js/supabase-client.js"></script>
     <script src="./assets/js/config.js"></script>

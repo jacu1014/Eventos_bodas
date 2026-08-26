@@ -6,8 +6,8 @@
 const CONFIG = {
     // Supabase Configuration
     supabase: {
-        url: 'https://tu-proyecto.supabase.co',
-        anonKey: 'tu-anon-key-public',
+        url: 'https://ljohstlurceekxmtfeoe.supabase.co',
+        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxqb2hzdGx1cmNlZWt4bXRmZW9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0NjA0NjIsImV4cCI6MjA2MTAzNjQ2Mn0.Wv0XF3tY4M8yZJ7s8q5YKzXgVKqCjHKXvqJNnW5h0Mg',
     },
     
     // App Configuration

@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración - Boda Digital</title>
+    <title>Panel de Administración - Boda Digital 💍</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,275 +17,399 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase JS Client via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <!-- Custom Styles -->
     <link rel="stylesheet" href="./assets/css/admin.css">
     <link rel="stylesheet" href="./assets/css/custom.css">
 </head>
-<body>
-    <div id="admin" x-data="adminApp()" x-init="init()">
-        <!-- Login Screen -->
-        <div x-show="!authenticated" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 px-4">
-            <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full">
-                <h1 class="text-3xl font-serif text-center mb-6" :style="{ color: config?.color_principal || '#e91e63' }">
-                    Panel de Administración
-                </h1>
+<body class="bg-gray-50 text-gray-900 antialiased">
+    <div id="admin" x-data="adminApp()" x-init="init()" x-cloak>
+        
+        <!-- ==================== PANTALLA DE ACCESO & REGISTRO ==================== -->
+        <div x-show="!authenticated" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-950 via-teal-950 to-emerald-900 px-4 py-12">
+            <div class="bg-white p-8 md:p-10 rounded-3xl shadow-2xl max-w-md w-full border border-amber-400/40 space-y-6">
+                <div class="text-center">
+                    <div class="text-5xl mb-2">💍 ✨</div>
+                    <h1 class="text-3xl font-serif font-bold text-emerald-950">Panel de los Novios</h1>
+                    <p class="text-xs text-gray-500 mt-1">Gestión integral de tu boda con Supabase</p>
+                </div>
                 
-                <form @submit.prevent="login" class="space-y-4">
+                <!-- Selector de Pestañas (Iniciar Sesión / Registrarse) -->
+                <div class="flex rounded-xl bg-gray-100 p-1 text-xs font-semibold">
+                    <button type="button" @click="authMode = 'login'; loginError = null"
+                            class="flex-1 py-2 rounded-lg transition-all"
+                            :class="authMode === 'login' ? 'bg-white text-emerald-950 shadow-sm font-bold' : 'text-gray-500 hover:text-gray-800'">
+                        Iniciar Sesión
+                    </button>
+                    <button type="button" @click="authMode = 'register'; loginError = null"
+                            class="flex-1 py-2 rounded-lg transition-all"
+                            :class="authMode === 'register' ? 'bg-white text-emerald-950 shadow-sm font-bold' : 'text-gray-500 hover:text-gray-800'">
+                        Crear Cuenta
+                    </button>
+                </div>
+                
+                <!-- Botón de Autenticación con Google -->
+                <button type="button" @click="loginWithGoogle"
+                        class="w-full py-3 px-4 border border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-xl text-xs flex items-center justify-center gap-3 shadow-xs transition-all">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24">
+                        <path fill="#EA4335" d="M12 5c1.7 0 3 .7 3.9 1.6l2.9-2.9C17 1.9 14.7 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/>
+                        <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+                        <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3 0-.8.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12 0 14.8s.7 5.1 1.9 7.5l3.7-2.9z"/>
+                        <path fill="#34A853" d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16.5C3.7 20.4 7.5 23.5 12 23.5z"/>
+                    </svg>
+                    <span>Continuar con Google</span>
+                </button>
+                
+                <div class="relative flex items-center justify-center">
+                    <div class="border-t border-gray-200 w-full"></div>
+                    <span class="bg-white px-3 text-[11px] text-gray-400 uppercase tracking-wider font-semibold">o con email</span>
+                </div>
+                
+                <!-- Formulario Iniciar Sesión -->
+                <form x-show="authMode === 'login'" @submit.prevent="login" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input type="email" x-model="loginData.email" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Correo Electrónico</label>
+                        <input type="email" x-model="loginData.email" required placeholder="novios@email.com"
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-700 focus:border-transparent">
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-                        <input type="password" x-model="loginData.password" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-semibold text-gray-700">Contraseña</label>
+                            <button type="button" @click="authMode = 'forgot'" class="text-[11px] text-emerald-800 font-semibold hover:underline">¿Olvidaste tu contraseña?</button>
+                        </div>
+                        <input type="password" x-model="loginData.password" required placeholder="••••••••"
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-700 focus:border-transparent">
                     </div>
                     
                     <button type="submit"
-                            class="w-full py-3 rounded-lg text-white font-semibold transition-all hover:scale-105"
-                            :style="{ backgroundColor: config?.color_principal || '#e91e63' }">
-                        Iniciar Sesión
+                            class="w-full py-3 rounded-xl text-white font-semibold transition-all hover:opacity-95 shadow-md text-sm"
+                            :style="{ backgroundColor: personalization.color_principal || '#0F4C3A' }"
+                            :disabled="loginLoading">
+                        <span x-show="!loginLoading">Acceder al Panel</span>
+                        <span x-show="loginLoading">Validando...</span>
                     </button>
-                    
-                    <p x-show="loginError" class="text-red-500 text-sm text-center" x-text="loginError"></p>
                 </form>
+                
+                <!-- Formulario Registrarse / Crear Cuenta -->
+                <form x-show="authMode === 'register'" @submit.prevent="registerUser" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Nombre Novia</label>
+                            <input type="text" x-model="loginData.nombreNovia" required placeholder="Valentina"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Nombre Novio</label>
+                            <input type="text" x-model="loginData.nombreNovio" required placeholder="Sebastián"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Correo Electrónico</label>
+                        <input type="email" x-model="loginData.email" required placeholder="novios@email.com"
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-700">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Crear Contraseña Segura</label>
+                        <input type="password" x-model="loginData.password" required minlength="6" placeholder="Mínimo 6 caracteres"
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-700">
+                    </div>
+                    
+                    <button type="submit"
+                            class="w-full py-3 rounded-xl text-white font-semibold transition-all hover:opacity-95 shadow-md text-sm"
+                            :style="{ backgroundColor: personalization.color_principal || '#0F4C3A' }"
+                            :disabled="loginLoading">
+                        <span x-show="!loginLoading">Registrar y Crear Boda ✨</span>
+                        <span x-show="loginLoading">Creando cuenta...</span>
+                    </button>
+                </form>
+                
+                <!-- Formulario Recuperar Contraseña -->
+                <form x-show="authMode === 'forgot'" @submit.prevent="requestPasswordReset" class="space-y-4">
+                    <p class="text-xs text-gray-600">Ingresa tu correo para enviarte un enlace seguro de recuperación de contraseña:</p>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Correo Electrónico</label>
+                        <input type="email" x-model="loginData.email" required placeholder="novios@email.com"
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-700">
+                    </div>
+                    <button type="submit" class="w-full py-3 rounded-xl text-white font-semibold bg-emerald-900 hover:bg-emerald-950 text-sm shadow-md" :disabled="loginLoading">
+                        Enviar Enlace de Recuperación
+                    </button>
+                    <button type="button" @click="authMode = 'login'" class="w-full text-center text-xs text-gray-500 hover:underline">← Volver a Iniciar Sesión</button>
+                </form>
+                
+                <p x-show="loginError" class="text-red-500 text-xs text-center font-medium bg-red-50 p-2.5 rounded-xl border border-red-200" x-text="loginError"></p>
             </div>
         </div>
         
-        <!-- Admin Panel -->
-        <div x-show="authenticated" class="min-h-screen bg-gray-50">
-            <!-- Sidebar -->
-            <div class="flex">
-                <aside class="w-64 bg-white shadow-lg min-h-screen fixed left-0 top-0 overflow-y-auto">
-                    <div class="p-4 border-b">
-                        <h2 class="text-xl font-serif" :style="{ color: config?.color_principal || '#e91e63' }">
-                            📋 Boda Digital
-                        </h2>
-                        <p class="text-sm text-gray-500 mt-1" x-text="`Bienvenido, ${user?.email || 'Admin'}`"></p>
+        <!-- ==================== PANEL PRINCIPAL (RESPONSIVE) ==================== -->
+        <div x-show="authenticated" class="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+            
+            <!-- Barra Superior Móvil con Botón Hamburguesa -->
+            <header class="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30 shadow-xs">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">💍</span>
+                    <h2 class="font-serif font-bold text-emerald-950 text-base" x-text="config?.novios || 'Boda Digital'"></h2>
+                </div>
+                <button @click="mobileSidebarOpen = !mobileSidebarOpen" class="p-2 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200">
+                    <span class="text-xl">☰</span>
+                </button>
+            </header>
+            
+            <!-- Backdrop Móvil -->
+            <div x-show="mobileSidebarOpen" @click="mobileSidebarOpen = false" x-transition:enter="transition-opacity ease-linear duration-200"
+                 class="fixed inset-0 bg-black/50 z-40 md:hidden"></div>
+
+            <!-- Sidebar (Escritorio + Drawer Móvil) -->
+            <aside class="w-64 bg-white border-r border-gray-200 min-h-screen fixed md:sticky left-0 top-0 overflow-y-auto z-50 shadow-sm transition-transform duration-300 md:translate-x-0"
+                   :class="mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
+                
+                <div class="p-5 border-b border-gray-100 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="text-2xl">💍</div>
+                        <div>
+                            <h2 class="text-base font-serif font-bold text-emerald-950">Boda Digital</h2>
+                            <p class="text-xs text-gray-500 truncate max-w-[130px]" x-text="user?.email || 'Novios'"></p>
+                        </div>
                     </div>
+                    <button @click="mobileSidebarOpen = false" class="md:hidden text-gray-400 text-lg font-bold">&times;</button>
+                </div>
+                
+                <nav class="p-4 space-y-1 text-sm font-medium">
+                    <button @click="currentView = 'dashboard'; currentViewChanged(); mobileSidebarOpen = false" 
+                            class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all"
+                            :class="currentView === 'dashboard' ? 'bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'text-gray-600 hover:bg-gray-100'">
+                        📊 Dashboard
+                    </button>
                     
-                    <nav class="p-4 space-y-1">
-                        <button @click="currentView = 'dashboard'" 
-                                class="w-full text-left px-4 py-2 rounded-lg transition-all"
-                                :class="currentView === 'dashboard' ? 'bg-pink-50 text-pink-700' : 'hover:bg-gray-100'">
-                            📊 Dashboard
-                        </button>
-                        
-                        <button @click="currentView = 'invitados'" 
-                                class="w-full text-left px-4 py-2 rounded-lg transition-all"
-                                :class="currentView === 'invitados' ? 'bg-pink-50 text-pink-700' : 'hover:bg-gray-100'">
-                            👥 Invitados
-                        </button>
-                        
-                        <button @click="currentView = 'mesas'" 
-                                class="w-full text-left px-4 py-2 rounded-lg transition-all"
-                                :class="currentView === 'mesas' ? 'bg-pink-50 text-pink-700' : 'hover:bg-gray-100'">
-                            🪑 Mesas
-                        </button>
-                        
-                        <button @click="currentView = 'finanzas'" 
-                                class="w-full text-left px-4 py-2 rounded-lg transition-all"
-                                :class="currentView === 'finanzas' ? 'bg-pink-50 text-pink-700' : 'hover:bg-gray-100'">
-                            💰 Finanzas
-                        </button>
-                        
-                        <button @click="currentView = 'proveedores'" 
-                                class="w-full text-left px-4 py-2 rounded-lg transition-all"
-                                :class="currentView === 'proveedores' ? 'bg-pink-50 text-pink-700' : 'hover:bg-gray-100'">
-                            📦 Proveedores
-                        </button>
-                        
-                        <button @click="currentView = 'tareas'" 
-                                class="w-full text-left px-4 py-2 rounded-lg transition-all"
-                                :class="currentView === 'tareas' ? 'bg-pink-50 text-pink-700' : 'hover:bg-gray-100'">
-                            ✅ Tareas
-                        </button>
-                        
-                        <button @click="currentView = 'personalizacion'" 
-                                class="w-full text-left px-4 py-2 rounded-lg transition-all"
-                                :class="currentView === 'personalizacion' ? 'bg-pink-50 text-pink-700' : 'hover:bg-gray-100'">
-                            🎨 Personalización
-                        </button>
-                        
-                        <button @click="currentView = 'album'" 
-                                class="w-full text-left px-4 py-2 rounded-lg transition-all"
-                                :class="currentView === 'album' ? 'bg-pink-50 text-pink-700' : 'hover:bg-gray-100'">
-                            📸 Álbum
-                        </button>
-                        
-                        <button @click="currentView = 'deseos'" 
-                                class="w-full text-left px-4 py-2 rounded-lg transition-all"
-                                :class="currentView === 'deseos' ? 'bg-pink-50 text-pink-700' : 'hover:bg-gray-100'">
-                            💝 Deseos
-                        </button>
-                        
-                        <button @click="logout" 
-                                class="w-full text-left px-4 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-all mt-4">
+                    <button @click="currentView = 'invitados'; mobileSidebarOpen = false" 
+                            class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all"
+                            :class="currentView === 'invitados' ? 'bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'text-gray-600 hover:bg-gray-100'">
+                        <span>👥 Invitados & WhatsApp</span>
+                        <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full" x-text="invitados.length"></span>
+                    </button>
+                    
+                    <button @click="currentView = 'mesas'; mobileSidebarOpen = false" 
+                            class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all"
+                            :class="currentView === 'mesas' ? 'bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'text-gray-600 hover:bg-gray-100'">
+                        <span>🪑 Mesas</span>
+                        <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full" x-text="mesas.length"></span>
+                    </button>
+                    
+                    <button @click="currentView = 'finanzas'; currentViewChanged(); mobileSidebarOpen = false" 
+                            class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all"
+                            :class="currentView === 'finanzas' ? 'bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'text-gray-600 hover:bg-gray-100'">
+                        💰 Finanzas & Presupuesto
+                    </button>
+                    
+                    <button @click="currentView = 'proveedores'; mobileSidebarOpen = false" 
+                            class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all"
+                            :class="currentView === 'proveedores' ? 'bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'text-gray-600 hover:bg-gray-100'">
+                        <span>📦 Proveedores</span>
+                        <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full" x-text="proveedores.length"></span>
+                    </button>
+                    
+                    <button @click="currentView = 'tareas'; mobileSidebarOpen = false" 
+                            class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all"
+                            :class="currentView === 'tareas' ? 'bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'text-gray-600 hover:bg-gray-100'">
+                        <span>✅ Tareas</span>
+                        <span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded-full" x-text="`${stats.porcentajeTareas || 0}%`"></span>
+                    </button>
+                    
+                    <button @click="currentView = 'personalizacion'; mobileSidebarOpen = false" 
+                            class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all"
+                            :class="currentView === 'personalizacion' ? 'bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'text-gray-600 hover:bg-gray-100'">
+                        🎨 Personalización & Cuentas
+                    </button>
+                    
+                    <button @click="currentView = 'album'; mobileSidebarOpen = false" 
+                            class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all"
+                            :class="currentView === 'album' ? 'bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'text-gray-600 hover:bg-gray-100'">
+                        <span>📸 Álbum de Fotos</span>
+                        <span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full" x-text="fotos.length"></span>
+                    </button>
+                    
+                    <button @click="currentView = 'deseos'; mobileSidebarOpen = false" 
+                            class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all"
+                            :class="currentView === 'deseos' ? 'bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'text-gray-600 hover:bg-gray-100'">
+                        <span>💝 Deseos & Música</span>
+                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded-full" x-text="deseos.length"></span>
+                    </button>
+                    
+                    <div class="pt-4 border-t border-gray-100 space-y-1">
+                        <a href="/" target="_blank" class="w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-all text-xs font-semibold">
+                            🌐 Ver Web de Invitados
+                        </a>
+                        <button @click="logout" class="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 rounded-xl transition-all text-xs font-semibold">
                             🚪 Cerrar Sesión
                         </button>
-                    </nav>
-                </aside>
+                    </div>
+                </nav>
+            </aside>
+            
+            <!-- Contenido Principal -->
+            <main class="flex-1 p-4 md:p-8 min-h-screen max-w-full overflow-x-hidden">
                 
-                <!-- Main Content -->
-                <main class="ml-64 flex-1 p-8">
-                    <!-- Dashboard View -->
-                    <div x-show="currentView === 'dashboard'" class="space-y-6" x-init="currentViewChanged()">
-                        <h1 class="text-3xl font-serif" :style="{ color: config?.color_principal || '#e91e63' }">
-                            📊 Dashboard
-                        </h1>
-                        
-                        <div class="grid md:grid-cols-4 gap-6">
-                            <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <p class="text-sm text-gray-500">Total Invitados</p>
-                                <p class="text-3xl font-bold mt-1" x-text="stats.totalInvitados || 0"></p>
-                            </div>
-                            
-                            <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <p class="text-sm text-gray-500">Confirmados</p>
-                                <p class="text-3xl font-bold mt-1 text-green-600" x-text="stats.confirmados || 0"></p>
-                                <p class="text-xs text-gray-400 mt-1">
-                                    <span x-text="stats.porcentajeConfirmados || 0"></span>% del total
-                                </p>
-                            </div>
-                            
-                            <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <p class="text-sm text-gray-500">Pendientes</p>
-                                <p class="text-3xl font-bold mt-1 text-yellow-600" x-text="stats.pendientes || 0"></p>
-                            </div>
-                            
-                            <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <p class="text-sm text-gray-500">Mesas</p>
-                                <p class="text-3xl font-bold mt-1 text-purple-600" x-text="stats.totalMesas || 0"></p>
-                            </div>
+                <!-- Notificación Toast de Éxito -->
+                <div x-show="success" x-transition class="fixed bottom-6 right-6 bg-emerald-950 text-white px-5 py-3 rounded-2xl shadow-xl z-50 flex items-center gap-3 border border-amber-400">
+                    <span class="text-xl">✨</span>
+                    <span class="text-sm font-semibold" x-text="successMessage || 'Acción completada con éxito'"></span>
+                </div>
+
+                <!-- ========================================================
+                     VISTA 1: DASHBOARD
+                     ======================================================== -->
+                <div x-show="currentView === 'dashboard'" class="space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-emerald-950">📊 Resumen General</h1>
+                            <p class="text-xs md:text-sm text-gray-500">Métricas y estado general de la boda</p>
+                        </div>
+                        <button @click="openPrintableAlbum" class="px-4 py-2 rounded-xl text-white font-semibold flex items-center justify-center gap-2 shadow text-xs md:text-sm"
+                                :style="{ backgroundColor: personalization.color_principal || '#0F4C3A' }">
+                            📖 Generar Álbum Imprimible
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                        <div class="bg-white p-4 md:p-6 rounded-2xl shadow-xs border border-gray-100">
+                            <p class="text-xs font-semibold text-gray-500">Total Invitados</p>
+                            <p class="text-2xl md:text-3xl font-bold mt-1 text-emerald-950" x-text="stats.totalInvitados || 0"></p>
+                            <p class="text-[11px] text-gray-400 mt-1" x-text="`${stats.confirmados || 0} confirmados`"></p>
                         </div>
                         
-                        <!-- Financial Stats -->
-                        <div class="grid md:grid-cols-3 gap-6">
-                            <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <p class="text-sm text-gray-500">Presupuesto Total</p>
-                                <p class="text-3xl font-bold mt-1 text-emerald-600">
-                                    $<span x-text="stats.totalPresupuesto || 0"></span>
-                                </p>
-                            </div>
-                            
-                            <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <p class="text-sm text-gray-500">Gastos</p>
-                                <p class="text-3xl font-bold mt-1 text-red-600">
-                                    $<span x-text="stats.totalGastos || 0"></span>
-                                </p>
-                            </div>
-                            
-                            <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <p class="text-sm text-gray-500">Saldo</p>
-                                <p class="text-3xl font-bold mt-1" :class="stats.saldo >= 0 ? 'text-emerald-600' : 'text-red-600'">
-                                    $<span x-text="stats.saldo || 0"></span>
-                                </p>
-                            </div>
+                        <div class="bg-white p-4 md:p-6 rounded-2xl shadow-xs border border-gray-100">
+                            <p class="text-xs font-semibold text-gray-500">Confirmación Asistencia</p>
+                            <p class="text-2xl md:text-3xl font-bold mt-1 text-emerald-700" x-text="`${stats.porcentajeConfirmados || 0}%`"></p>
+                            <p class="text-[11px] text-gray-400 mt-1" x-text="`${stats.noAsistiran || 0} declinados`"></p>
                         </div>
                         
-                        <!-- Charts -->
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <h3 class="text-lg font-semibold mb-4">Estado de Confirmaciones</h3>
-                                <div class="h-64">
-                                    <canvas id="chartInvitados"></canvas>
-                                </div>
-                            </div>
-                            
-                            <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <h3 class="text-lg font-semibold mb-4">Gastos por Categoría</h3>
-                                <div class="h-64">
-                                    <canvas id="chartPresupuesto"></canvas>
-                                </div>
-                            </div>
+                        <div class="bg-white p-4 md:p-6 rounded-2xl shadow-xs border border-gray-100">
+                            <p class="text-xs font-semibold text-gray-500">Saldo Pendiente</p>
+                            <p class="text-lg md:text-2xl font-bold mt-1 text-amber-600" x-text="formatCurrency(stats.saldo)"></p>
+                            <p class="text-[11px] text-gray-400 mt-1" x-text="`Gastos: ${formatCurrency(stats.totalGastos)}`"></p>
                         </div>
                         
-                        <!-- Progress Bars -->
-                        <div class="bg-white p-6 rounded-xl shadow-sm">
-                            <h3 class="text-lg font-semibold mb-4">📋 Progreso de la Boda</h3>
-                            <div class="space-y-4">
-                                <div>
-                                    <div class="flex justify-between text-sm mb-1">
-                                        <span>Invitados confirmados</span>
-                                        <span x-text="`${stats.porcentajeConfirmados || 0}%`"></span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 rounded-full h-2">
-                                        <div class="h-2 rounded-full transition-all duration-500"
-                                             :style="{ width: `${stats.porcentajeConfirmados || 0}%`, backgroundColor: config?.color_principal || '#e91e63' }"></div>
-                                    </div>
-                                </div>
-                                
-                                <div>
-                                    <div class="flex justify-between text-sm mb-1">
-                                        <span>Tareas completadas</span>
-                                        <span x-text="`${stats.porcentajeTareas || 0}%`"></span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 rounded-full h-2">
-                                        <div class="h-2 rounded-full transition-all duration-500"
-                                             :style="{ width: `${stats.porcentajeTareas || 0}%`, backgroundColor: config?.color_principal || '#e91e63' }"></div>
-                                    </div>
-                                    <p class="text-xs text-gray-400 mt-1">
-                                        <span x-text="stats.tareasCompletadas || 0"></span> de <span x-text="stats.totalTareas || 0"></span> tareas completadas
-                                    </p>
-                                </div>
-                            </div>
+                        <div class="bg-white p-4 md:p-6 rounded-2xl shadow-xs border border-gray-100">
+                            <p class="text-xs font-semibold text-gray-500">Progreso de Tareas</p>
+                            <p class="text-2xl md:text-3xl font-bold mt-1 text-teal-700" x-text="`${stats.porcentajeTareas || 0}%`"></p>
+                            <p class="text-[11px] text-gray-400 mt-1" x-text="`${stats.tareasCompletadas || 0}/${stats.totalTareas || 0} listas`"></p>
                         </div>
                     </div>
                     
-                    <!-- Invitados View -->
-                    <div x-show="currentView === 'invitados'" class="space-y-6">
-                        <div class="flex justify-between items-center">
-                            <h1 class="text-3xl font-serif" :style="{ color: config?.color_principal || '#e91e63' }">
-                                👥 Gestión de Invitados
-                            </h1>
-                            <button @click="showAddInvitado = true"
-                                    class="px-4 py-2 rounded-lg text-white font-semibold"
-                                    :style="{ backgroundColor: config?.color_principal || '#e91e63' }">
-                                + Agregar Invitado
-                            </button>
+                    <!-- Gráficos -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-5 md:p-6 rounded-2xl shadow-xs border border-gray-100">
+                            <h3 class="text-base font-bold text-gray-800 mb-4">👥 Estado de Confirmación de Invitados</h3>
+                            <div class="h-64 flex items-center justify-center">
+                                <canvas id="chartInvitados"></canvas>
+                            </div>
                         </div>
                         
-                        <!-- Invitados Table -->
-                        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                            <table class="w-full">
-                                <thead class="bg-gray-50">
+                        <div class="bg-white p-5 md:p-6 rounded-2xl shadow-xs border border-gray-100">
+                            <h3 class="text-base font-bold text-gray-800 mb-4">💰 Gastos por Categoría</h3>
+                            <div class="h-64 flex items-center justify-center">
+                                <canvas id="chartPresupuesto"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========================================================
+                     VISTA 2: INVITADOS & ENVÍO DE WHATSAPP
+                     ======================================================== -->
+                <div x-show="currentView === 'invitados'" class="space-y-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-emerald-950">👥 Gestión de Invitados</h1>
+                            <p class="text-xs md:text-sm text-gray-500">Genera invitaciones individuales y grupales para WhatsApp sin costo ni APIs</p>
+                        </div>
+                        <div class="flex gap-2 flex-wrap">
+                            <button @click="openWhatsAppModal(null, null)" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs flex items-center gap-1.5">
+                                <span>📲</span> Enviar por WhatsApp
+                            </button>
+                            <button @click="exportCSV" class="px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs">
+                                📥 Exportar CSV
+                            </button>
+                            <button @click="openAddInvitado" class="px-3.5 py-2 rounded-xl text-white font-semibold text-xs shadow-xs"
+                                    :style="{ backgroundColor: personalization.color_principal || '#0F4C3A' }">
+                                ➕ Nuevo Invitado / Familia
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Filtros y Búsqueda -->
+                    <div class="bg-white p-4 rounded-2xl shadow-xs border border-gray-100 flex flex-wrap gap-3 items-center">
+                        <div class="flex-1 min-w-[200px]">
+                            <input type="text" x-model="invitadoSearch" placeholder="🔍 Buscar por nombre, grupo o mesa..."
+                                   class="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs md:text-sm focus:ring-2 focus:ring-emerald-700">
+                        </div>
+                        <div>
+                            <select x-model="invitadoFilterAsistencia" class="px-3 py-2 border border-gray-200 rounded-xl text-xs bg-white">
+                                <option value="all">Todos los Estados</option>
+                                <option value="confirmados">Solo Confirmados</option>
+                                <option value="pendientes">Solo Pendientes</option>
+                                <option value="no_asistiran">No Asistirán</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select x-model="invitadoFilterEnvio" class="px-3 py-2 border border-gray-200 rounded-xl text-xs bg-white">
+                                <option value="all">Todos los Envíos</option>
+                                <option value="enviados">Invitación Enviada</option>
+                                <option value="pendientes">Pendiente de Envío</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Tabla de Invitados -->
+                    <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs md:text-sm">
+                                <thead class="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold uppercase text-[11px]">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Nombre</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Email</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Teléfono</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Asistencia</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Mesa</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Acciones</th>
+                                        <th class="px-4 py-3.5">Nombre / Familia</th>
+                                        <th class="px-4 py-3.5">Grupo</th>
+                                        <th class="px-4 py-3.5">Asistencia</th>
+                                        <th class="px-4 py-3.5">Pases</th>
+                                        <th class="px-4 py-3.5">Mesa</th>
+                                        <th class="px-4 py-3.5">Envío</th>
+                                        <th class="px-4 py-3.5 text-right">Acciones WhatsApp</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-200">
-                                    <template x-for="(invitado, index) in invitados" :key="index">
-                                        <tr>
-                                            <td class="px-6 py-4" x-text="invitado.nombre"></td>
-                                            <td class="px-6 py-4" x-text="invitado.email"></td>
-                                            <td class="px-6 py-4" x-text="invitado.telefono"></td>
-                                            <td class="px-6 py-4">
-                                                <span class="px-2 py-1 rounded-full text-xs"
-                                                      :class="invitado.asistira === true ? 'bg-green-100 text-green-700' : 
-                                                               invitado.asistira === false ? 'bg-red-100 text-red-700' : 
-                                                               'bg-gray-100 text-gray-700'"
-                                                      x-text="invitado.asistira === true ? 'Confirmado' : 
-                                                               invitado.asistira === false ? 'No asiste' : 'Pendiente'">
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="invitado in filteredInvitados()" :key="invitado.id">
+                                        <tr class="hover:bg-gray-50/80 transition-all">
+                                            <td class="px-4 py-3.5 font-semibold text-gray-900">
+                                                <div x-text="invitado.nombre"></div>
+                                                <div class="text-[11px] text-gray-400 font-normal" x-text="invitado.telefono || invitado.email || 'Sin contacto'"></div>
+                                            </td>
+                                            <td class="px-4 py-3.5">
+                                                <span class="px-2 py-0.5 rounded-md text-[11px] bg-purple-50 text-purple-700 font-medium" x-text="invitado.grupo || 'General'"></span>
+                                            </td>
+                                            <td class="px-4 py-3.5">
+                                                <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                                                      :class="invitado.asistira === true ? 'bg-emerald-100 text-emerald-800' : (invitado.asistira === false ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800')">
+                                                    <span x-text="invitado.asistira === true ? 'Confirmado' : (invitado.asistira === false ? 'Declinado' : 'Pendiente')"></span>
                                                 </span>
                                             </td>
-                                            <td class="px-6 py-4" x-text="invitado.mesa || 'Sin asignar'"></td>
-                                            <td class="px-6 py-4">
-                                                <button @click="editInvitado(invitado)" class="text-blue-600 hover:text-blue-800 mr-2">
-                                                    ✏️
+                                            <td class="px-4 py-3.5 font-medium" x-text="`${(invitado.pases_adultos || 1) + (invitado.pases_ninos || 0)} pases`"></td>
+                                            <td class="px-4 py-3.5 text-gray-600" x-text="invitado.mesa || 'Sin asignar'"></td>
+                                            <td class="px-4 py-3.5">
+                                                <span class="px-2 py-0.5 rounded-md text-[11px] font-medium"
+                                                      :class="invitado.invitacion_enviada ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'"
+                                                      x-text="invitado.invitacion_enviada ? 'Enviada 📲' : 'Pendiente ⏳'"></span>
+                                            </td>
+                                            <td class="px-4 py-3.5 text-right space-x-1">
+                                                <button @click="openWhatsAppModal(invitado, null)" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold" title="Generar tarjeta de WhatsApp">
+                                                    📲 WhatsApp
                                                 </button>
-                                                <button @click="deleteInvitado(invitado.id)" class="text-red-600 hover:text-red-800">
-                                                    🗑️
-                                                </button>
+                                                <button @click="editInvitado(invitado)" class="text-blue-600 hover:text-blue-800 p-1 text-xs" title="Editar">✏️</button>
+                                                <button @click="deleteInvitado(invitado.id)" class="text-red-500 hover:text-red-700 p-1 text-xs" title="Eliminar">🗑️</button>
                                             </td>
                                         </tr>
                                     </template>
@@ -290,411 +417,650 @@
                             </table>
                         </div>
                     </div>
+                </div>
+
+                <!-- ========================================================
+                     VISTA 3: MESAS (DRAG & DROP)
+                     ======================================================== -->
+                <div x-show="currentView === 'mesas'" class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-emerald-950">🪑 Distribución de Mesas</h1>
+                            <p class="text-xs md:text-sm text-gray-500">Organiza el plano y asigna a los invitados a sus respectivas mesas</p>
+                        </div>
+                        <button @click="openAddMesa" class="px-3.5 py-2 rounded-xl text-white font-semibold text-xs shadow-xs"
+                                :style="{ backgroundColor: personalization.color_principal || '#0F4C3A' }">
+                            ➕ Crear Mesa
+                        </button>
+                    </div>
                     
-                    <!-- Other views placeholder -->
-                    <div x-show="currentView === 'mesas'" class="space-y-6">
-                        <h1 class="text-3xl font-serif" :style="{ color: config?.color_principal || '#e91e63' }">
-                            🪑 Gestión de Mesas
-                        </h1>
-                        
-                        <div class="flex justify-between items-center">
-                            <p class="text-gray-600">Organiza la distribución de tus invitados en las mesas</p>
-                            <button @click="showAddMesa = true"
-                                    class="px-4 py-2 rounded-lg text-white font-semibold"
-                                    :style="{ backgroundColor: config?.color_principal || '#e91e63' }">
-                                + Agregar Mesa
-                            </button>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Invitados sin Mesa -->
+                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-gray-100">
+                            <h3 class="font-bold text-sm text-gray-800 mb-3 flex items-center justify-between">
+                                <span>🚶 Sin Mesa Asignada</span>
+                                <span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full"
+                                      x-text="invitados.filter(i => !i.mesa || i.mesa === 'Sin asignar').length"></span>
+                            </h3>
+                            <div class="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                                <template x-for="inv in invitados.filter(i => !i.mesa || i.mesa === 'Sin asignar')" :key="inv.id">
+                                    <div draggable="true" @dragstart="startDragInvitado($event, inv)"
+                                         class="p-2.5 bg-gray-50 hover:bg-emerald-50 rounded-xl border border-gray-200 cursor-grab active:cursor-grabbing text-xs flex items-center justify-between">
+                                        <div>
+                                            <span class="font-semibold text-gray-800" x-text="inv.nombre"></span>
+                                            <div class="text-[10px] text-gray-500" x-text="`${(inv.pases_adultos || 1) + (inv.pases_ninos || 0)} pases`"></div>
+                                        </div>
+                                        <span class="text-[10px] text-emerald-800 font-semibold">✋ Arrastrar</span>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
                         
-                        <!-- Mesas Grid -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Mesas Creadas -->
+                        <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <template x-for="mesa in mesas" :key="mesa.id">
-                                <div class="bg-white p-6 rounded-xl shadow-sm border-2 transition-all hover:shadow-md"
-                                     :style="{ borderColor: config?.color_principal || '#e91e63' }">
-                                    <div class="flex justify-between items-start mb-4">
-                                        <h3 class="text-xl font-bold" x-text="mesa.nombre"></h3>
-                                        <div class="flex gap-2">
-                                            <button @click="editMesa(mesa)" class="text-blue-600 hover:text-blue-800">✏️</button>
-                                            <button @click="deleteMesa(mesa.id)" class="text-red-600 hover:text-red-800">🗑️</button>
+                                <div @dragover.prevent @drop="dropOnMesa($event, mesa)"
+                                     class="bg-white p-4 rounded-2xl shadow-xs border-2 transition-all"
+                                     :class="invitados.filter(i => i.mesa === mesa.nombre).length >= mesa.capacidad ? 'border-red-300 bg-red-50/20' : 'border-emerald-200 hover:border-emerald-500'">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <div>
+                                            <h4 class="font-bold text-emerald-950 text-sm" x-text="mesa.nombre"></h4>
+                                            <p class="text-[10px] text-gray-500" x-text="mesa.ubicacion || 'Zona General'"></p>
+                                        </div>
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                                                  :class="invitados.filter(i => i.mesa === mesa.nombre).length >= mesa.capacidad ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'"
+                                                  x-text="`${invitados.filter(i => i.mesa === mesa.nombre).length}/${mesa.capacidad}`"></span>
+                                            <button @click="editMesa(mesa)" class="text-gray-400 hover:text-gray-600 text-xs">✏️</button>
+                                            <button @click="deleteMesa(mesa.id)" class="text-red-400 hover:text-red-600 text-xs">🗑️</button>
                                         </div>
                                     </div>
-                                    <div class="space-y-2 text-sm">
-                                        <p><span class="text-gray-500">Capacidad:</span> <span x-text="mesa.capacidad"></span></p>
-                                        <p><span class="text-gray-500">Ubicación:</span> <span x-text="mesa.ubicacion || 'No especificada'"></span></p>
-                                        <p><span class="text-gray-500">Invitados:</span> 
-                                            <span x-text="invitados.filter(i => i.mesa === mesa.nombre).length"></span>
-                                        </p>
-                                    </div>
-                                    <div class="mt-4 flex flex-wrap gap-1">
-                                        <template x-for="invitado in invitados.filter(i => i.mesa === mesa.nombre)" :key="invitado.id">
-                                            <span class="px-2 py-1 bg-gray-100 rounded-full text-xs"
-                                                  :class="invitado.asistira === true ? 'bg-green-100 text-green-700' : 
-                                                           invitado.asistira === false ? 'bg-red-100 text-red-700' : 
-                                                           'bg-yellow-100 text-yellow-700'"
-                                                  x-text="invitado.nombre"></span>
+                                    
+                                    <div class="space-y-1 min-h-[70px] bg-gray-50 p-2 rounded-xl border border-dashed border-gray-200">
+                                        <template x-for="inv in invitados.filter(i => i.mesa === mesa.nombre)" :key="inv.id">
+                                            <div class="p-1.5 bg-white rounded-lg text-[11px] shadow-2xs flex items-center justify-between">
+                                                <span class="font-medium text-gray-800" x-text="inv.nombre"></span>
+                                                <button @click="supabaseClient.updateInvitado(inv.id, { mesa: 'Sin asignar' }).then(() => loadInvitados())"
+                                                        class="text-red-400 hover:text-red-600 font-bold">&times;</button>
+                                            </div>
                                         </template>
                                     </div>
                                 </div>
                             </template>
                         </div>
-                        
-                        <!-- Add/Edit Mesa Modal -->
-                        <div x-show="showAddMesa" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                            <div class="bg-white rounded-2xl p-8 max-w-md w-full">
-                                <h3 class="text-2xl font-serif mb-4" :style="{ color: config?.color_principal || '#e91e63' }">
-                                    <span x-text="editingMesa ? 'Editar Mesa' : 'Nueva Mesa'"></span>
-                                </h3>
-                                
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de la Mesa</label>
-                                        <input type="text" x-model="editingMesa.nombre"
-                                               placeholder="Ej: Mesa 1, Mesa Principal..."
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                                    </div>
-                                    
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Capacidad</label>
-                                        <input type="number" x-model="editingMesa.capacidad"
-                                               placeholder="Número de personas"
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                                    </div>
-                                    
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
-                                        <input type="text" x-model="editingMesa.ubicacion"
-                                               placeholder="Ej: Principal, Lateral, Fondo..."
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                                    </div>
-                                    
-                                    <div class="flex gap-3">
-                                        <button @click="saveMesa()"
-                                                class="flex-1 py-2 rounded-lg text-white font-semibold"
-                                                :style="{ backgroundColor: config?.color_principal || '#e91e63' }">
-                                            Guardar
-                                        </button>
-                                        <button @click="cancelMesa()"
-                                                class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300">
-                                            Cancelar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                    </div>
+                </div>
+
+                <!-- ========================================================
+                     VISTA 4: FINANZAS & PRESUPUESTO
+                     ======================================================== -->
+                <div x-show="currentView === 'finanzas'" class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-emerald-950">💰 Finanzas & Presupuesto</h1>
+                            <p class="text-xs md:text-sm text-gray-500">Control de gastos, ingresos y saldo del evento</p>
+                        </div>
+                        <button @click="openAddFinanza" class="px-3.5 py-2 rounded-xl text-white font-semibold text-xs shadow-xs"
+                                :style="{ backgroundColor: personalization.color_principal || '#0F4C3A' }">
+                            ➕ Registrar Movimiento
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-gray-100">
+                            <p class="text-xs font-semibold text-gray-500">Fondo Inicial / Ingresos</p>
+                            <p class="text-xl md:text-2xl font-bold text-emerald-700 mt-1" x-text="formatCurrency(stats.totalPresupuesto)"></p>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-gray-100">
+                            <p class="text-xs font-semibold text-gray-500">Total Gastos Contratados</p>
+                            <p class="text-xl md:text-2xl font-bold text-red-600 mt-1" x-text="formatCurrency(stats.totalGastos)"></p>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-gray-100">
+                            <p class="text-xs font-semibold text-gray-500">Saldo Disponible</p>
+                            <p class="text-xl md:text-2xl font-bold mt-1" :class="stats.saldo >= 0 ? 'text-emerald-700' : 'text-red-600'" x-text="formatCurrency(stats.saldo)"></p>
                         </div>
                     </div>
                     
-                    <div x-show="currentView === 'finanzas'" class="space-y-6">
-                        <h1 class="text-3xl font-serif" :style="{ color: config?.color_principal || '#e91e63' }">
-                            💰 Finanzas
-                        </h1>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <p class="text-sm text-gray-500">Total Presupuesto</p>
-                                <p class="text-2xl font-bold text-emerald-600">$<span x-text="stats.totalPresupuesto || 0"></span></p>
-                            </div>
-                            <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <p class="text-sm text-gray-500">Total Gastos</p>
-                                <p class="text-2xl font-bold text-red-600">$<span x-text="stats.totalGastos || 0"></span></p>
-                            </div>
-                            <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <p class="text-sm text-gray-500">Saldo</p>
-                                <p class="text-2xl font-bold" :class="stats.saldo >= 0 ? 'text-emerald-600' : 'text-red-600'">
-                                    $<span x-text="stats.saldo || 0"></span>
-                                </p>
-                            </div>
-                        </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <p class="text-gray-600">Registro de ingresos y gastos</p>
-                            <button @click="showAddFinanza = true"
-                                    class="px-4 py-2 rounded-lg text-white font-semibold"
-                                    :style="{ backgroundColor: config?.color_principal || '#e91e63' }">
-                                + Agregar Movimiento
-                            </button>
-                        </div>
-                        
-                        <!-- Finanzas Table -->
-                        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                            <table class="w-full">
-                                <thead class="bg-gray-50">
+                    <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs md:text-sm">
+                                <thead class="bg-gray-50 text-gray-600 uppercase text-[11px]">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Concepto</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Categoría</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Monto</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Tipo</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Fecha</th>
-                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Acciones</th>
+                                        <th class="px-4 py-3.5">Concepto</th>
+                                        <th class="px-4 py-3.5">Categoría</th>
+                                        <th class="px-4 py-3.5">Monto</th>
+                                        <th class="px-4 py-3.5">Tipo</th>
+                                        <th class="px-4 py-3.5 text-right">Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-200">
-                                    <template x-for="(item, index) in finanzas" :key="index">
-                                        <tr>
-                                            <td class="px-6 py-4" x-text="item.concepto"></td>
-                                            <td class="px-6 py-4" x-text="item.categoria || 'Otros'"></td>
-                                            <td class="px-6 py-4 font-medium" :class="item.tipo === 'ingreso' ? 'text-emerald-600' : 'text-red-600'">
-                                                $<span x-text="item.monto"></span>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="item in finanzas" :key="item.id">
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3.5 font-semibold text-gray-900" x-text="item.concepto"></td>
+                                            <td class="px-4 py-3.5"><span class="px-2 py-0.5 bg-gray-100 rounded text-xs" x-text="item.categoria || 'Otros'"></span></td>
+                                            <td class="px-4 py-3.5 font-bold" :class="item.tipo === 'ingreso' ? 'text-emerald-600' : 'text-red-600'" x-text="formatCurrency(item.monto)"></td>
+                                            <td class="px-4 py-3.5">
+                                                <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold"
+                                                      :class="item.tipo === 'ingreso' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'"
+                                                      x-text="item.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'"></span>
                                             </td>
-                                            <td class="px-6 py-4">
-                                                <span class="px-2 py-1 rounded-full text-xs"
-                                                      :class="item.tipo === 'ingreso' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
-                                                    <span x-text="item.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'"></span>
-                                                </span>
-                                            </td>
-                                            <td class="px-6 py-4" x-text="item.fecha || 'N/A'"></td>
-                                            <td class="px-6 py-4">
-                                                <button @click="deleteFinanza(item.id)" class="text-red-600 hover:text-red-800">🗑️</button>
+                                            <td class="px-4 py-3.5 text-right">
+                                                <button @click="deleteFinanza(item.id)" class="text-red-500 hover:text-red-700">🗑️</button>
                                             </td>
                                         </tr>
                                     </template>
                                 </tbody>
                             </table>
                         </div>
-                        
-                        <!-- Add Finanza Modal -->
-                        <div x-show="showAddFinanza" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                            <div class="bg-white rounded-2xl p-8 max-w-md w-full">
-                                <h3 class="text-2xl font-serif mb-4" :style="{ color: config?.color_principal || '#e91e63' }">
-                                    Nuevo Movimiento
-                                </h3>
-                                
-                                <div class="space-y-4">
+                    </div>
+                </div>
+
+                <!-- ========================================================
+                     VISTA 5: PROVEEDORES
+                     ======================================================== -->
+                <div x-show="currentView === 'proveedores'" class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-emerald-950">📦 Proveedores & Cotizaciones</h1>
+                            <p class="text-xs md:text-sm text-gray-500">Compara propuestas y contrata proveedores directamente</p>
+                        </div>
+                        <button @click="openAddProveedor" class="px-3.5 py-2 rounded-xl text-white font-semibold text-xs shadow-xs"
+                                :style="{ backgroundColor: personalization.color_principal || '#0F4C3A' }">
+                            ➕ Nueva Cotización
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                        <template x-for="prov in proveedores" :key="prov.id">
+                            <div class="bg-white p-5 md:p-6 rounded-2xl shadow-xs border transition-all"
+                                 :class="prov.estado === 'contratado' ? 'border-emerald-500 bg-emerald-50/10' : 'border-gray-100'">
+                                <div class="flex justify-between items-start mb-2">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Concepto</label>
-                                        <input type="text" x-model="editingFinanza.concepto"
-                                               placeholder="Ej: Pago de salón"
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                        <span class="text-[10px] px-2 py-0.5 bg-gray-100 rounded text-gray-600 font-semibold" x-text="prov.categoria"></span>
+                                        <h3 class="text-lg font-bold text-emerald-950 mt-1" x-text="prov.nombre"></h3>
                                     </div>
-                                    
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Monto</label>
-                                        <input type="number" x-model="editingFinanza.monto"
-                                               placeholder="0.00" step="0.01"
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                                    </div>
-                                    
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
-                                        <select x-model="editingFinanza.tipo"
-                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                                            <option value="ingreso">Ingreso</option>
-                                            <option value="gasto">Gasto</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
-                                        <input type="text" x-model="editingFinanza.categoria"
-                                               placeholder="Ej: Lugar, Comida, Decoración..."
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                                    </div>
-                                    
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-                                        <input type="date" x-model="editingFinanza.fecha"
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                                    </div>
-                                    
-                                    <div class="flex gap-3">
-                                        <button @click="saveFinanza()"
-                                                class="flex-1 py-2 rounded-lg text-white font-semibold"
-                                                :style="{ backgroundColor: config?.color_principal || '#e91e63' }">
-                                            Guardar
-                                        </button>
-                                        <button @click="cancelFinanza()"
-                                                class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300">
-                                            Cancelar
-                                        </button>
-                                    </div>
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase"
+                                          :class="prov.estado === 'contratado' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
+                                          x-text="prov.estado"></span>
+                                </div>
+                                <p class="text-xl font-bold text-gray-900 mb-2" x-text="formatCurrency(prov.monto)"></p>
+                                <p class="text-xs text-gray-600 mb-3 bg-gray-50 p-2.5 rounded-xl" x-text="prov.servicios_incluidos || 'Sin detalles'"></p>
+                                <div class="flex justify-between items-center pt-2 border-t border-gray-100 text-xs">
+                                    <button x-show="prov.estado !== 'contratado'" @click="transferProveedor(prov.id)" class="px-3 py-1 bg-amber-500 text-white rounded-lg font-bold">
+                                        ⭐ Contratar
+                                    </button>
+                                    <span x-show="prov.estado === 'contratado'" class="text-emerald-700 font-bold">✅ Contratado</span>
+                                    <button @click="deleteProveedor(prov.id)" class="text-red-500 text-xs">🗑️</button>
                                 </div>
                             </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- ========================================================
+                     VISTA 6: TAREAS
+                     ======================================================== -->
+                <div x-show="currentView === 'tareas'" class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-emerald-950">✅ Cronograma & Tareas</h1>
+                            <p class="text-xs md:text-sm text-gray-500">Checklist organizado por fases para la planeación</p>
                         </div>
+                        <button @click="openAddTarea" class="px-3.5 py-2 rounded-xl text-white font-semibold text-xs shadow-xs"
+                                :style="{ backgroundColor: personalization.color_principal || '#0F4C3A' }">
+                            ➕ Nueva Tarea
+                        </button>
                     </div>
                     
-                    <div x-show="currentView === 'proveedores'" class="space-y-6">
-                        <h1 class="text-3xl font-serif" :style="{ color: config?.color_principal || '#e91e63' }">
-                            📦 Proveedores
-                        </h1>
-                        <p class="text-gray-500">Módulo en construcción...</p>
-                    </div>
-                    
-                    <div x-show="currentView === 'tareas'" class="space-y-6">
-                        <h1 class="text-3xl font-serif" :style="{ color: config?.color_principal || '#e91e63' }">
-                            ✅ Lista de Tareas
-                        </h1>
-                        
-                        <div class="flex justify-between items-center">
-                            <p class="text-gray-600">Organiza todas las tareas pendientes para la boda</p>
-                            <button @click="addTarea()"
-                                    class="px-4 py-2 rounded-lg text-white font-semibold"
-                                    :style="{ backgroundColor: config?.color_principal || '#e91e63' }">
-                                + Nueva Tarea
-                            </button>
-                        </div>
-                        
-                        <!-- Tareas List -->
-                        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                            <ul class="divide-y divide-gray-200">
-                                <template x-for="tarea in tareas" :key="tarea.id">
-                                    <li class="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
-                                        <div class="flex items-center gap-4">
-                                            <input type="checkbox" 
-                                                   x-model="tarea.completada" 
-                                                   @change="toggleTarea(tarea)"
-                                                   class="w-5 h-5 rounded">
-                                            <div>
-                                                <p class="font-medium" :class="tarea.completada ? 'line-through text-gray-400' : ''"
-                                                   x-text="tarea.titulo"></p>
-                                                <p class="text-sm text-gray-500" x-text="tarea.prioridad || 'Media'"></p>
+                    <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
+                        <ul class="divide-y divide-gray-100">
+                            <template x-for="tarea in tareas" :key="tarea.id">
+                                <li class="p-3.5 md:p-4 flex items-center justify-between hover:bg-gray-50">
+                                    <div class="flex items-center gap-3">
+                                        <input type="checkbox" :checked="tarea.completada" @change="toggleTarea(tarea)" class="w-4 h-4 rounded text-emerald-600 cursor-pointer">
+                                        <div>
+                                            <p class="font-semibold text-gray-900 text-xs md:text-sm" :class="tarea.completada ? 'line-through text-gray-400' : ''" x-text="tarea.titulo"></p>
+                                            <div class="flex gap-2 items-center mt-0.5 text-[10px]">
+                                                <span class="text-gray-400" x-text="tarea.fase"></span>
+                                                <span class="text-emerald-700 font-medium" x-text="`👤 ${tarea.responsable}`"></span>
                                             </div>
                                         </div>
-                                        <div class="flex gap-2">
-                                            <button @click="editTarea(tarea)" class="text-blue-600 hover:text-blue-800">✏️</button>
-                                            <button @click="deleteTarea(tarea.id)" class="text-red-600 hover:text-red-800">🗑️</button>
-                                        </div>
-                                    </li>
-                                </template>
-                            </ul>
+                                    </div>
+                                    <button @click="deleteTarea(tarea.id)" class="text-red-400 text-xs">🗑️</button>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- ========================================================
+                     VISTA 7: PERSONALIZACIÓN & CUENTAS
+                     ======================================================== -->
+                <div x-show="currentView === 'personalizacion'" class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-emerald-950">🎨 Personalización Visual & Cuentas</h1>
+                            <p class="text-xs md:text-sm text-gray-500">Configura los colores, datos del evento y cuentas de regalo</p>
                         </div>
-                        
-                        <!-- Add/Edit Tarea Modal -->
-                        <div x-show="showAddTarea" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                            <div class="bg-white rounded-2xl p-8 max-w-md w-full">
-                                <h3 class="text-2xl font-serif mb-4" :style="{ color: config?.color_principal || '#e91e63' }">
-                                    <span x-text="editingTarea.id ? 'Editar Tarea' : 'Nueva Tarea'"></span>
-                                </h3>
-                                
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Título</label>
-                                        <input type="text" x-model="editingTarea.titulo"
-                                               placeholder="Ej: Enviar invitaciones"
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                        <button @click="savePersonalization" class="px-5 py-2.5 rounded-xl text-white font-semibold shadow-md text-xs md:text-sm"
+                                :style="{ backgroundColor: personalization.color_principal || '#0F4C3A' }">
+                            💾 Guardar Todo
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Colores y Paleta -->
+                        <div class="bg-white p-5 md:p-6 rounded-2xl shadow-xs border border-gray-100 space-y-4">
+                            <h3 class="font-bold text-base text-emerald-950">👰🤵 Datos de los Novios y Evento</h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Nombre de la Novia *</label>
+                                    <input type="text" x-model="personalization.novia_nombre" class="w-full px-3 py-2 border rounded-xl text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Nombre del Novio *</label>
+                                    <input type="text" x-model="personalization.novio_nombre" class="w-full px-3 py-2 border rounded-xl text-xs">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Fecha y Hora del Evento *</label>
+                                <input type="datetime-local" x-model="personalization.fecha_boda" class="w-full px-3 py-2 border rounded-xl text-xs">
+                            </div>
+                            <hr class="border-gray-200">
+                            <h3 class="font-bold text-base text-emerald-950 pt-2">🎨 Paleta de Colores de la Web</h3>
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <button @click="applyThemePreset('emerald_gold')" class="p-2 border rounded-lg text-left hover:border-emerald-600">🟢 Esmeralda & Dorado</button>
+                                <button @click="applyThemePreset('rose_gold')" class="p-2 border rounded-lg text-left hover:border-emerald-600">🌸 Rosa Palo & Oro Rosa</button>
+                                <button @click="applyThemePreset('midnight_gold')" class="p-2 border rounded-lg text-left hover:border-emerald-600">🌌 Azul Noche & Dorado</button>
+                                <button @click="applyThemePreset('burgundy_gold')" class="p-2 border rounded-lg text-left hover:border-emerald-600">🍷 Borgoña & Dorado</button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 pt-2">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Color Principal</label>
+                                    <div class="flex gap-2 items-center">
+                                        <input type="color" x-model="personalization.color_principal" class="w-8 h-8 rounded cursor-pointer">
+                                        <input type="text" x-model="personalization.color_principal" class="w-full px-2 py-1.5 border rounded-lg text-xs font-mono">
                                     </div>
-                                    
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Prioridad</label>
-                                        <select x-model="editingTarea.prioridad"
-                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                                            <option value="alta">Alta</option>
-                                            <option value="media">Media</option>
-                                            <option value="baja">Baja</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div class="flex gap-3">
-                                        <button @click="saveTarea()"
-                                                class="flex-1 py-2 rounded-lg text-white font-semibold"
-                                                :style="{ backgroundColor: config?.color_principal || '#e91e63' }">
-                                            Guardar
-                                        </button>
-                                        <button @click="cancelTarea()"
-                                                class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300">
-                                            Cancelar
-                                        </button>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Color Dorado / Acento</label>
+                                    <div class="flex gap-2 items-center">
+                                        <input type="color" x-model="personalization.color_secundario" class="w-8 h-8 rounded cursor-pointer">
+                                        <input type="text" x-model="personalization.color_secundario" class="w-full px-2 py-1.5 border rounded-lg text-xs font-mono">
                                     </div>
                                 </div>
                             </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Frase de Amor de Portada</label>
+                                <input type="text" x-model="personalization.frase_amor" class="w-full px-3 py-2 border rounded-xl text-xs">
+                            </div>
+                        </div>
+                        
+                        <!-- Cuentas Bancarias & Bre-B -->
+                        <div class="bg-white p-5 md:p-6 rounded-2xl shadow-xs border border-gray-100 space-y-4">
+                            <div class="flex justify-between items-center">
+                                <h3 class="font-bold text-base text-emerald-950">💳 Cuentas Bancarias & Bre-B</h3>
+                                <button @click="openAddCuenta" class="px-2.5 py-1 bg-emerald-50 text-emerald-900 border border-emerald-300 rounded-lg text-xs font-bold">
+                                    ➕ Agregar Cuenta
+                                </button>
+                            </div>
+                            <div class="space-y-2">
+                                <template x-for="(cta, idx) in personalization.cuentas_bancarias" :key="idx">
+                                    <div class="p-3 bg-gray-50 border border-amber-200 rounded-xl text-xs space-y-1">
+                                        <div class="flex justify-between items-center font-bold text-emerald-950">
+                                            <span x-text="`🏦 ${cta.banco_nombre}`"></span>
+                                            <button @click="deleteCuenta(idx)" class="text-red-500 font-bold">&times;</button>
+                                        </div>
+                                        <div>Cuenta: <strong x-text="cta.banco_numero_cuenta"></strong></div>
+                                        <div x-show="cta.banco_llave_breb" class="text-amber-800 font-semibold">⚡ Llave Bre-B: <span x-text="cta.banco_llave_breb"></span></div>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div x-show="currentView === 'personalizacion'" class="space-y-6">
-                        <h1 class="text-3xl font-serif" :style="{ color: config?.color_principal || '#e91e63' }">
-                            🎨 Personalización Visual
-                        </h1>
-                        <p class="text-gray-600">Personaliza la apariencia de tu página de boda en tiempo real</p>
-                        
-                        <div class="bg-white p-6 rounded-xl shadow-sm space-y-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Color Principal</label>
-                                <input type="color" x-model="personalization.color_principal" 
-                                       class="w-full h-12 rounded-lg cursor-pointer">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Color Secundario</label>
-                                <input type="color" x-model="personalization.color_secundario" 
-                                       class="w-full h-12 rounded-lg cursor-pointer">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Fuente para Títulos</label>
-                                <select x-model="personalization.fuente_titulos"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                                    <option value="serif">Serif (Elegante)</option>
-                                    <option value="sans-serif">Sans Serif (Moderno)</option>
-                                    <option value="script">Script (Manuscrita)</option>
-                                    <option value="display">Display (Decorativa)</option>
-                                </select>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">URL del Logo</label>
-                                <input type="text" x-model="personalization.logo_url"
-                                       placeholder="https://ejemplo.com/logo.png"
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">URL del Fondo</label>
-                                <input type="text" x-model="personalization.fondo_url"
-                                       placeholder="https://ejemplo.com/fondo.jpg"
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Mensaje Personal</label>
-                                <textarea x-model="personalization.mensaje_personal"
-                                          rows="4"
-                                          placeholder="Escribe un mensaje especial para tus invitados..."
-                                          class="w-full px-4 py-2 border border-gray-300 rounded-lg"></textarea>
-                            </div>
-                            
-                            <button @click="savePersonalization()"
-                                    class="w-full py-3 rounded-lg text-white font-semibold transition-all hover:scale-105"
-                                    :style="{ backgroundColor: config?.color_principal || '#e91e63' }">
-                                💾 Guardar Personalización
+                </div>
+
+                <!-- ========================================================
+                     VISTA 8: ÁLBUM & MODERACIÓN
+                     ======================================================== -->
+                <div x-show="currentView === 'album'" class="space-y-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 md:p-6 rounded-2xl shadow-xs border border-gray-100">
+                        <div>
+                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-emerald-950">📸 Moderación del Álbum en Vivo</h1>
+                            <p class="text-xs text-gray-500">Controla las fotos compartidas por los invitados durante la celebración</p>
+                        </div>
+                        <div class="flex gap-2 flex-wrap">
+                            <button @click="togglePauseAlbum" class="px-3.5 py-2 rounded-xl text-white font-semibold text-xs shadow-xs"
+                                    :class="personalization.album_pausado ? 'bg-emerald-600' : 'bg-amber-600'">
+                                <span x-text="personalization.album_pausado ? '▶️ Reanudar Álbum' : '⏸️ Pausa de Emergencia'"></span>
                             </button>
-                            
-                            <div x-show="success" class="bg-green-100 text-green-700 p-4 rounded-lg">
-                                ✅ Personalización guardada exitosamente
+                            <button @click="togglePublicDownload" class="px-3.5 py-2 rounded-xl border text-xs font-semibold"
+                                    :class="personalization.descarga_publica_habilitada ? 'bg-emerald-100 text-emerald-900 border-emerald-400' : 'bg-gray-100 text-gray-700'">
+                                <span x-text="personalization.descarga_publica_habilitada ? '🔒 Ocultar Descarga' : '🔓 Autorizar Descarga a Invitados'"></span>
+                            </button>
+                            <button @click="openPrintableAlbum" class="px-3.5 py-2 rounded-xl text-white font-semibold text-xs shadow-xs"
+                                    :style="{ backgroundColor: personalization.color_principal || '#0F4C3A' }">
+                                📖 Ver Álbum Imprimible
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
+                        <template x-for="foto in fotos" :key="foto.id">
+                            <div class="bg-white rounded-2xl overflow-hidden shadow-xs border"
+                                 :class="foto.aprobada ? 'border-gray-200' : 'border-red-400 bg-red-50/20'">
+                                <img :src="foto.url || foto.foto_url" class="w-full h-36 md:h-44 object-cover" loading="lazy">
+                                <div class="p-2.5">
+                                    <p class="font-bold text-[11px] text-gray-900 truncate" x-text="foto.nombre_subidor || foto.autor_nombre || 'Invitado'"></p>
+                                    <div class="flex justify-between items-center mt-2 pt-1 border-t border-gray-100 text-xs">
+                                        <button @click="toggleAprobarFoto(foto)" class="font-semibold text-[11px]" :class="foto.aprobada ? 'text-amber-600' : 'text-emerald-600'">
+                                            <span x-text="foto.aprobada ? '👁️ Ocultar' : '✅ Mostrar'"></span>
+                                        </button>
+                                        <button @click="deleteFoto(foto.id)" class="text-red-500 text-xs">🗑️</button>
+                                    </div>
+                                </div>
                             </div>
-                            
-                            <div x-show="error" class="bg-red-100 text-red-700 p-4 rounded-lg" x-text="error"></div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- ========================================================
+                     VISTA 9: DESEOS & MÚSICA
+                     ======================================================== -->
+                <div x-show="currentView === 'deseos'" class="space-y-6">
+                    <h1 class="text-2xl md:text-3xl font-serif font-bold text-emerald-950">💝 Muro de Deseos & Sugerencias de Canciones</h1>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-gray-100">
+                            <h3 class="font-bold text-sm text-emerald-950 mb-3">💌 Dedicatorias Recibidas</h3>
+                            <div class="space-y-2 max-h-[450px] overflow-y-auto pr-1">
+                                <template x-for="d in deseos" :key="d.id">
+                                    <div class="p-3 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-start text-xs">
+                                        <div>
+                                            <strong class="text-emerald-950" x-text="d.nombre || d.autor"></strong>
+                                            <p class="text-gray-700 italic mt-0.5" x-text="`&ldquo;${d.texto || d.mensaje}&rdquo;`"></p>
+                                        </div>
+                                        <button @click="deleteDeseo(d.id)" class="text-red-400 text-xs">🗑️</button>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
                         
-                        <!-- Preview -->
-                        <div class="bg-white p-6 rounded-xl shadow-sm">
-                            <h3 class="text-lg font-semibold mb-4">Vista Previa</h3>
-                            <div class="p-8 rounded-lg text-center" :style="{ backgroundColor: personalization.color_principal + '20' }">
-                                <p class="text-2xl font-bold" :style="{ fontFamily: personalization.fuente_titulos, color: personalization.color_principal }">
-                                    ¡Ejemplo de Título!
-                                </p>
-                                <p class="mt-2" :style="{ fontFamily: personalization.fuente_textos, color: personalization.color_secundario }">
-                                    Este es un ejemplo de texto con los colores y fuentes seleccionados
-                                </p>
+                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-gray-100">
+                            <h3 class="font-bold text-sm text-emerald-950 mb-3">🎵 Playlist Sugerida para el DJ</h3>
+                            <div class="space-y-2 max-h-[450px] overflow-y-auto pr-1">
+                                <template x-for="c in canciones" :key="c.id">
+                                    <div class="p-2.5 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-center text-xs">
+                                        <div>
+                                            <strong class="text-gray-900" x-text="c.titulo"></strong>
+                                            <p class="text-[10px] text-gray-500" x-text="`Por: ${c.invitado || 'Invitado'}`"></p>
+                                        </div>
+                                        <button @click="deleteCancion(c.id)" class="text-red-400 text-xs">🗑️</button>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </div>
-                    
-                    <div x-show="currentView === 'album'" class="space-y-6">
-                        <h1 class="text-3xl font-serif" :style="{ color: config?.color_principal || '#e91e63' }">
-                            📸 Álbum de Fotos
-                        </h1>
-                        <p class="text-gray-500">Módulo en construcción...</p>
+                </div>
+
+            </main>
+        </div>
+
+        <!-- ========================================================
+             MODAL GENERADOR DE WHATSAPP (INDIVIDUAL & GRUPAL SIN API)
+             ======================================================== -->
+        <div x-show="showWhatsAppModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto text-gray-900">
+                <div class="flex justify-between items-center border-b border-gray-100 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">📲</span>
+                        <h3 class="text-lg font-serif font-bold text-emerald-950">Enviar Invitación por WhatsApp</h3>
                     </div>
+                    <button @click="showWhatsAppModal = false" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+                </div>
+                
+                <!-- Selector de Modo (Individual vs Grupal) -->
+                <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
+                    <button type="button" @click="whatsAppData.modo = 'individual'; updateWhatsAppMessage()"
+                            class="p-2.5 rounded-xl border text-center transition-all"
+                            :class="whatsAppData.modo === 'individual' ? 'border-emerald-600 bg-emerald-50 text-emerald-950 font-bold' : 'border-gray-200 text-gray-600'">
+                        👤 Tarjeta Individual
+                    </button>
+                    <button type="button" @click="whatsAppData.modo = 'grupal'; updateWhatsAppMessage()"
+                            class="p-2.5 rounded-xl border text-center transition-all"
+                            :class="whatsAppData.modo === 'grupal' ? 'border-emerald-600 bg-emerald-50 text-emerald-950 font-bold' : 'border-gray-200 text-gray-600'">
+                        👥 Tarjeta Grupal / Familiar
+                    </button>
+                </div>
+                
+                <!-- Selector de Destinatario según Modo -->
+                <div x-show="whatsAppData.modo === 'individual'">
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Seleccionar Invitado</label>
+                    <select x-model="whatsAppData.invitadoSeleccionado" @change="whatsAppData.telefonoManual = whatsAppData.invitadoSeleccionado?.telefono || ''; updateWhatsAppMessage()"
+                            class="w-full px-3 py-2 border rounded-xl text-xs bg-white">
+                        <option :value="null">-- Seleccionar de la lista --</option>
+                        <template x-for="inv in invitados" :key="inv.id">
+                            <option :value="inv" x-text="`${inv.nombre} (${(inv.pases_adultos || 1) + (inv.pases_ninos || 0)} pases)`"></option>
+                        </template>
+                    </select>
+                </div>
+                
+                <div x-show="whatsAppData.modo === 'grupal'">
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Seleccionar Grupo / Familia</label>
+                    <select x-model="whatsAppData.grupoSeleccionado" @change="updateWhatsAppMessage()"
+                            class="w-full px-3 py-2 border rounded-xl text-xs bg-white">
+                        <option value="">-- Seleccionar grupo --</option>
+                        <template x-for="grp in getGruposUnicos()" :key="grp">
+                            <option :value="grp" x-text="grp"></option>
+                        </template>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Teléfono WhatsApp Destino</label>
+                    <input type="text" x-model="whatsAppData.telefonoManual" placeholder="Ej: +57 300 123 4567"
+                           class="w-full px-3 py-2 border rounded-xl text-xs">
+                </div>
+                
+                <!-- Selector de Plantilla -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Tono del Mensaje</label>
+                    <select x-model="whatsAppData.plantilla" @change="updateWhatsAppMessage()" class="w-full px-3 py-2 border rounded-xl text-xs bg-white">
+                        <option value="emocional">❤️ Cálido / Emocional (Recomendado)</option>
+                        <option value="formal">✉️ Formal & Elegante</option>
+                        <option value="recordatorio">⏳ Recordatorio Amable</option>
+                        <option value="urgente">⏰ Últimos días para confirmar</option>
+                    </select>
+                </div>
+                
+                <!-- Vista Previa del Mensaje -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Vista Previa del Mensaje para WhatsApp</label>
+                    <textarea x-model="whatsAppData.mensajeGenerado" rows="5"
+                              class="w-full px-3 py-2 bg-emerald-50/40 border border-emerald-200 rounded-xl text-xs font-mono text-gray-800 leading-relaxed"></textarea>
+                </div>
+                
+                <!-- Acciones Rápidas -->
+                <div class="space-y-2 pt-1">
+                    <button @click="sendWhatsAppDirect"
+                            class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center justify-center gap-2 transition-all">
+                        <span>📲</span> Abrir Directamente en WhatsApp (Web / App)
+                    </button>
                     
-                    <div x-show="currentView === 'deseos'" class="space-y-6">
-                        <h1 class="text-3xl font-serif" :style="{ color: config?.color_principal || '#e91e63' }">
-                            💝 Muro de Deseos
-                        </h1>
-                        <p class="text-gray-500">Módulo en construcción...</p>
+                    <div class="flex gap-2">
+                        <button @click="copyWhatsAppMessage" class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl text-xs font-semibold">
+                            📋 Copiar Mensaje
+                        </button>
+                        <button @click="copyInvitationLink" class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl text-xs font-semibold">
+                            🔗 Copiar Enlace
+                        </button>
                     </div>
-                </main>
+                </div>
             </div>
         </div>
+
+        <!-- Modales Auxiliares (Invitado, Mesa, Finanza, Proveedor, Tarea, Cuenta) -->
+        <!-- Modal Invitado -->
+        <div x-show="showAddInvitado" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+                <h3 class="text-lg font-bold text-emerald-950" x-text="editingInvitado.id ? '✏️ Editar Invitado' : '➕ Nuevo Invitado / Familia'"></h3>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Nombre Completo o Familia *</label>
+                    <input type="text" x-model="editingInvitado.nombre" required placeholder="Ej: Carlos Mendoza o Familia Gómez Restrepo" class="w-full px-3 py-2 border rounded-xl text-xs">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Grupo / Categoría</label>
+                        <input type="text" x-model="editingInvitado.grupo" placeholder="Familia Novia, Amigos Novio..." class="w-full px-3 py-2 border rounded-xl text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Teléfono / WhatsApp</label>
+                        <input type="text" x-model="editingInvitado.telefono" placeholder="+57 300 123 4567" class="w-full px-3 py-2 border rounded-xl text-xs">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Pases Adultos</label>
+                        <input type="number" x-model="editingInvitado.pases_adultos" min="1" max="15" class="w-full px-3 py-2 border rounded-xl text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Pases Niños</label>
+                        <input type="number" x-model="editingInvitado.pases_ninos" min="0" max="10" class="w-full px-3 py-2 border rounded-xl text-xs">
+                    </div>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button @click="saveInvitado" class="flex-1 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">Guardar</button>
+                    <button @click="showAddInvitado = false" class="flex-1 py-2 bg-gray-200 text-gray-800 rounded-xl text-xs font-bold">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Mesa -->
+        <div x-show="showAddMesa" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+                <h3 class="text-lg font-bold text-emerald-950" x-text="editingMesa.id ? '✏️ Editar Mesa' : '➕ Crear Mesa'"></h3>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Nombre de la Mesa *</label>
+                    <input type="text" x-model="editingMesa.nombre" required class="w-full px-3 py-2 border rounded-xl text-xs">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Capacidad</label>
+                        <input type="number" x-model="editingMesa.capacidad" min="1" max="20" class="w-full px-3 py-2 border rounded-xl text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Ubicación</label>
+                        <input type="text" x-model="editingMesa.ubicacion" class="w-full px-3 py-2 border rounded-xl text-xs">
+                    </div>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button @click="saveMesa" class="flex-1 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">Guardar</button>
+                    <button @click="showAddMesa = false" class="flex-1 py-2 bg-gray-200 text-gray-800 rounded-xl text-xs font-bold">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Finanza -->
+        <div x-show="showAddFinanza" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+                <h3 class="text-lg font-bold text-emerald-950">💰 Registrar Movimiento</h3>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Concepto *</label>
+                    <input type="text" x-model="editingFinanza.concepto" required class="w-full px-3 py-2 border rounded-xl text-xs">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Monto ($) *</label>
+                        <input type="number" x-model="editingFinanza.monto" required class="w-full px-3 py-2 border rounded-xl text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Tipo</label>
+                        <select x-model="editingFinanza.tipo" class="w-full px-3 py-2 border rounded-xl text-xs">
+                            <option value="gasto">Gasto</option>
+                            <option value="ingreso">Ingreso</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button @click="saveFinanza" class="flex-1 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">Guardar</button>
+                    <button @click="showAddFinanza = false" class="flex-1 py-2 bg-gray-200 text-gray-800 rounded-xl text-xs font-bold">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Proveedor -->
+        <div x-show="showAddProveedor" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+                <h3 class="text-lg font-bold text-emerald-950">📦 Nueva Cotización</h3>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Empresa *</label>
+                    <input type="text" x-model="editingProveedor.nombre" required class="w-full px-3 py-2 border rounded-xl text-xs">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Categoría</label>
+                        <input type="text" x-model="editingProveedor.categoria" class="w-full px-3 py-2 border rounded-xl text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Monto ($)</label>
+                        <input type="number" x-model="editingProveedor.monto" class="w-full px-3 py-2 border rounded-xl text-xs">
+                    </div>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button @click="saveProveedor" class="flex-1 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">Guardar</button>
+                    <button @click="showAddProveedor = false" class="flex-1 py-2 bg-gray-200 text-gray-800 rounded-xl text-xs font-bold">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Tarea -->
+        <div x-show="showAddTarea" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+                <h3 class="text-lg font-bold text-emerald-950">✅ Nueva Tarea</h3>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Título *</label>
+                    <input type="text" x-model="editingTarea.titulo" required class="w-full px-3 py-2 border rounded-xl text-xs">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button @click="saveTarea" class="flex-1 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">Guardar</button>
+                    <button @click="showAddTarea = false" class="flex-1 py-2 bg-gray-200 text-gray-800 rounded-xl text-xs font-bold">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Cuenta Bancaria -->
+        <div x-show="showAddCuenta" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+                <h3 class="text-lg font-bold text-emerald-950">💳 Agregar Cuenta (Colombia)</h3>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Banco / Billetera *</label>
+                    <select x-model="editingCuenta.banco_nombre" class="w-full px-3 py-2 border rounded-xl text-xs bg-white">
+                        <template x-for="b in window.BANCOS_COLOMBIA" :key="b">
+                            <option :value="b" x-text="b"></option>
+                        </template>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Número de Cuenta *</label>
+                    <input type="text" x-model="editingCuenta.banco_numero_cuenta" required class="w-full px-3 py-2 border rounded-xl text-xs">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Titular *</label>
+                    <input type="text" x-model="editingCuenta.banco_titular" required class="w-full px-3 py-2 border rounded-xl text-xs">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">⚡ Llave Bre-B (Celular o ID)</label>
+                    <input type="text" x-model="editingCuenta.banco_llave_breb" placeholder="3001234567" class="w-full px-3 py-2 border rounded-xl text-xs">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button @click="saveCuenta" class="flex-1 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">Guardar</button>
+                    <button @click="showAddCuenta = false" class="flex-1 py-2 bg-gray-200 text-gray-800 rounded-xl text-xs font-bold">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
     </div>
-    
+
     <!-- Scripts -->
     <script src="./assets/js/supabase-client.js"></script>
     <script src="./assets/js/config.js"></script>

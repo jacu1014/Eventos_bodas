@@ -1,12 +1,16 @@
 /**
- * Boda Digital - Photo Upload Logic
- * Handles file uploads, previews, and gallery display
+ * ==============================================================================
+ * BODA DIGITAL - LÓGICA DE SUBIDA DE FOTOS (UPLOAD.JS) 📸✨
+ * Integración móvil con cámara, compresión y galería en tiempo real
+ * ==============================================================================
  */
 
 function uploadApp() {
     return {
         config: {
-            color_principal: '#e91e63',
+            color_principal: '#0F4C3A',
+            novios: 'Valentina & Sebastián',
+            album_pausado: false
         },
         
         file: null,
@@ -25,55 +29,27 @@ function uploadApp() {
         
         async init() {
             try {
-                // Load configuration
                 await this.loadConfig();
-                
-                // Load recent photos
                 await this.loadRecentPhotos();
-                
-                console.log('📸 Upload page initialized');
+                console.log('📸 Photo uploader initialized');
             } catch (error) {
-                console.error('Error initializing upload:', error);
+                console.error('Error initializing uploader:', error);
             }
         },
         
         async loadConfig() {
-            try {
-                if (typeof supabaseClient === 'undefined') {
-                    this.config.color_principal = '#e91e63';
-                    return;
-                }
-                
-                const { data, error } = await supabaseClient.getConfiguracion();
-                if (error) throw error;
-                
-                if (data && data.color_principal) {
-                    this.config.color_principal = data.color_principal;
-                }
-            } catch (error) {
-                console.error('Error loading config:', error);
+            if (typeof supabaseClient === 'undefined') return;
+            const { data } = await supabaseClient.getConfiguracion();
+            if (data) {
+                this.config = { ...this.config, ...data };
             }
         },
         
         async loadRecentPhotos() {
-            try {
-                if (typeof supabaseClient === 'undefined') {
-                    // Demo photos
-                    this.recentPhotos = [
-                        { url: 'https://picsum.photos/200/200?random=1', titulo: 'Foto 1' },
-                        { url: 'https://picsum.photos/200/200?random=2', titulo: 'Foto 2' },
-                        { url: 'https://picsum.photos/200/200?random=3', titulo: 'Foto 3' },
-                    ];
-                    return;
-                }
-                
-                const { data, error } = await supabaseClient.getFotos(9);
-                if (error) throw error;
-                
-                this.recentPhotos = data || [];
-                
-            } catch (error) {
-                console.error('Error loading recent photos:', error);
+            if (typeof supabaseClient === 'undefined') return;
+            const { data } = await supabaseClient.getFotos(6, true);
+            if (data) {
+                this.recentPhotos = data;
             }
         },
         
@@ -93,24 +69,21 @@ function uploadApp() {
         },
         
         processFile(file) {
-            // Validate file type
-            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-            if (!validTypes.includes(file.type)) {
-                this.uploadError = 'Formato no soportado. Usa JPG, PNG, GIF o WebP.';
+            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic'];
+            if (!validTypes.includes(file.type) && !file.type.startsWith('image/')) {
+                this.uploadError = 'Formato no soportado. Usa JPG, PNG, WebP o GIF.';
                 return;
             }
             
-            // Validate file size (10MB max)
-            const maxSize = 10 * 1024 * 1024;
+            const maxSize = 12 * 1024 * 1024; // 12MB
             if (file.size > maxSize) {
-                this.uploadError = 'El archivo es demasiado grande. Máximo 10MB.';
+                this.uploadError = 'El archivo es demasiado grande. Máximo 12MB.';
                 return;
             }
             
             this.file = file;
             this.uploadError = null;
             
-            // Create preview
             const reader = new FileReader();
             reader.onload = (e) => {
                 this.previewUrl = e.target.result;
@@ -125,7 +98,6 @@ function uploadApp() {
             this.uploadError = null;
             this.photoData.titulo = '';
             
-            // Reset file input
             if (this.$refs && this.$refs.fileInput) {
                 this.$refs.fileInput.value = '';
             }
@@ -133,12 +105,12 @@ function uploadApp() {
         
         async uploadPhoto() {
             if (!this.file) {
-                this.uploadError = 'Por favor selecciona una foto';
+                this.uploadError = 'Por favor selecciona o toma una foto';
                 return;
             }
             
             if (!this.photoData.nombre) {
-                this.uploadError = 'Por favor ingresa tu nombre';
+                this.uploadError = 'Por favor escribe tu nombre';
                 return;
             }
             
@@ -147,22 +119,6 @@ function uploadApp() {
             this.uploadSuccess = false;
             
             try {
-                if (typeof supabaseClient === 'undefined') {
-                    // Demo mode - simulate upload
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                    
-                    // Add to recent photos
-                    this.recentPhotos.unshift({
-                        url: this.previewUrl,
-                        titulo: this.photoData.titulo || 'Foto subida',
-                        nombre_subidor: this.photoData.nombre,
-                    });
-                    
-                    this.uploadSuccess = true;
-                    this.clearFile();
-                    return;
-                }
-                
                 const { data, error } = await supabaseClient.uploadFoto(
                     this.file,
                     {
@@ -173,15 +129,12 @@ function uploadApp() {
                 
                 if (error) throw new Error(error);
                 
-                // Add to recent photos
                 if (data) {
                     this.recentPhotos.unshift(data);
                 }
                 
                 this.uploadSuccess = true;
                 this.clearFile();
-                
-                // Show confetti
                 this.showConfetti();
                 
             } catch (error) {
@@ -196,14 +149,10 @@ function uploadApp() {
                 confetti({
                     particleCount: 80,
                     spread: 60,
-                    origin: { y: 0.6 }
+                    origin: { y: 0.6 },
+                    colors: ['#0F4C3A', '#D4AF37', '#ffffff']
                 });
             }
         }
     };
 }
-
-// Auto-initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('📸 Upload page loaded');
-});

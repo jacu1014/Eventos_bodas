@@ -61,3 +61,5 @@ coverage/
 *.pem
 *.key
 *.crt
+
+.forge-permissions.json

@@ -131,9 +131,9 @@
                 <!-- Main Content -->
                 <main class="ml-64 flex-1 p-8">
                     <!-- Dashboard View -->
-                    <div x-show="currentView === 'dashboard'" class="space-y-6">
+                    <div x-show="currentView === 'dashboard'" class="space-y-6" x-init="currentViewChanged()">
                         <h1 class="text-3xl font-serif" :style="{ color: config?.color_principal || '#e91e63' }">
-                            Dashboard
+                            📊 Dashboard
                         </h1>
                         
                         <div class="grid md:grid-cols-4 gap-6">
@@ -145,6 +145,9 @@
                             <div class="bg-white p-6 rounded-xl shadow-sm">
                                 <p class="text-sm text-gray-500">Confirmados</p>
                                 <p class="text-3xl font-bold mt-1 text-green-600" x-text="stats.confirmados || 0"></p>
+                                <p class="text-xs text-gray-400 mt-1">
+                                    <span x-text="stats.porcentajeConfirmados || 0"></span>% del total
+                                </p>
                             </div>
                             
                             <div class="bg-white p-6 rounded-xl shadow-sm">
@@ -153,13 +156,55 @@
                             </div>
                             
                             <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <p class="text-sm text-gray-500">Fotos Subidas</p>
-                                <p class="text-3xl font-bold mt-1 text-blue-600" x-text="stats.totalFotos || 0"></p>
+                                <p class="text-sm text-gray-500">Mesas</p>
+                                <p class="text-3xl font-bold mt-1 text-purple-600" x-text="stats.totalMesas || 0"></p>
                             </div>
                         </div>
                         
+                        <!-- Financial Stats -->
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <div class="bg-white p-6 rounded-xl shadow-sm">
+                                <p class="text-sm text-gray-500">Presupuesto Total</p>
+                                <p class="text-3xl font-bold mt-1 text-emerald-600">
+                                    $<span x-text="stats.totalPresupuesto || 0"></span>
+                                </p>
+                            </div>
+                            
+                            <div class="bg-white p-6 rounded-xl shadow-sm">
+                                <p class="text-sm text-gray-500">Gastos</p>
+                                <p class="text-3xl font-bold mt-1 text-red-600">
+                                    $<span x-text="stats.totalGastos || 0"></span>
+                                </p>
+                            </div>
+                            
+                            <div class="bg-white p-6 rounded-xl shadow-sm">
+                                <p class="text-sm text-gray-500">Saldo</p>
+                                <p class="text-3xl font-bold mt-1" :class="stats.saldo >= 0 ? 'text-emerald-600' : 'text-red-600'">
+                                    $<span x-text="stats.saldo || 0"></span>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Charts -->
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="bg-white p-6 rounded-xl shadow-sm">
+                                <h3 class="text-lg font-semibold mb-4">Estado de Confirmaciones</h3>
+                                <div class="h-64">
+                                    <canvas id="chartInvitados"></canvas>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-6 rounded-xl shadow-sm">
+                                <h3 class="text-lg font-semibold mb-4">Gastos por Categoría</h3>
+                                <div class="h-64">
+                                    <canvas id="chartPresupuesto"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Progress Bars -->
                         <div class="bg-white p-6 rounded-xl shadow-sm">
-                            <h3 class="text-lg font-semibold mb-4">Progreso de la Boda</h3>
+                            <h3 class="text-lg font-semibold mb-4">📋 Progreso de la Boda</h3>
                             <div class="space-y-4">
                                 <div>
                                     <div class="flex justify-between text-sm mb-1">
@@ -167,8 +212,8 @@
                                         <span x-text="`${stats.porcentajeConfirmados || 0}%`"></span>
                                     </div>
                                     <div class="w-full bg-gray-200 rounded-full h-2">
-                                        <div class="h-2 rounded-full bg-green-500 transition-all"
-                                             :style="{ width: `${stats.porcentajeConfirmados || 0}%` }"></div>
+                                        <div class="h-2 rounded-full transition-all duration-500"
+                                             :style="{ width: `${stats.porcentajeConfirmados || 0}%`, backgroundColor: config?.color_principal || '#e91e63' }"></div>
                                     </div>
                                 </div>
                                 
@@ -178,9 +223,12 @@
                                         <span x-text="`${stats.porcentajeTareas || 0}%`"></span>
                                     </div>
                                     <div class="w-full bg-gray-200 rounded-full h-2">
-                                        <div class="h-2 rounded-full bg-blue-500 transition-all"
-                                             :style="{ width: `${stats.porcentajeTareas || 0}%` }"></div>
+                                        <div class="h-2 rounded-full transition-all duration-500"
+                                             :style="{ width: `${stats.porcentajeTareas || 0}%`, backgroundColor: config?.color_principal || '#e91e63' }"></div>
                                     </div>
+                                    <p class="text-xs text-gray-400 mt-1">
+                                        <span x-text="stats.tareasCompletadas || 0"></span> de <span x-text="stats.totalTareas || 0"></span> tareas completadas
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -248,14 +296,219 @@
                         <h1 class="text-3xl font-serif" :style="{ color: config?.color_principal || '#e91e63' }">
                             🪑 Gestión de Mesas
                         </h1>
-                        <p class="text-gray-500">Módulo en construcción...</p>
+                        
+                        <div class="flex justify-between items-center">
+                            <p class="text-gray-600">Organiza la distribución de tus invitados en las mesas</p>
+                            <button @click="showAddMesa = true"
+                                    class="px-4 py-2 rounded-lg text-white font-semibold"
+                                    :style="{ backgroundColor: config?.color_principal || '#e91e63' }">
+                                + Agregar Mesa
+                            </button>
+                        </div>
+                        
+                        <!-- Mesas Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <template x-for="mesa in mesas" :key="mesa.id">
+                                <div class="bg-white p-6 rounded-xl shadow-sm border-2 transition-all hover:shadow-md"
+                                     :style="{ borderColor: config?.color_principal || '#e91e63' }">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <h3 class="text-xl font-bold" x-text="mesa.nombre"></h3>
+                                        <div class="flex gap-2">
+                                            <button @click="editMesa(mesa)" class="text-blue-600 hover:text-blue-800">✏️</button>
+                                            <button @click="deleteMesa(mesa.id)" class="text-red-600 hover:text-red-800">🗑️</button>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-2 text-sm">
+                                        <p><span class="text-gray-500">Capacidad:</span> <span x-text="mesa.capacidad"></span></p>
+                                        <p><span class="text-gray-500">Ubicación:</span> <span x-text="mesa.ubicacion || 'No especificada'"></span></p>
+                                        <p><span class="text-gray-500">Invitados:</span> 
+                                            <span x-text="invitados.filter(i => i.mesa === mesa.nombre).length"></span>
+                                        </p>
+                                    </div>
+                                    <div class="mt-4 flex flex-wrap gap-1">
+                                        <template x-for="invitado in invitados.filter(i => i.mesa === mesa.nombre)" :key="invitado.id">
+                                            <span class="px-2 py-1 bg-gray-100 rounded-full text-xs"
+                                                  :class="invitado.asistira === true ? 'bg-green-100 text-green-700' : 
+                                                           invitado.asistira === false ? 'bg-red-100 text-red-700' : 
+                                                           'bg-yellow-100 text-yellow-700'"
+                                                  x-text="invitado.nombre"></span>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <!-- Add/Edit Mesa Modal -->
+                        <div x-show="showAddMesa" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div class="bg-white rounded-2xl p-8 max-w-md w-full">
+                                <h3 class="text-2xl font-serif mb-4" :style="{ color: config?.color_principal || '#e91e63' }">
+                                    <span x-text="editingMesa ? 'Editar Mesa' : 'Nueva Mesa'"></span>
+                                </h3>
+                                
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de la Mesa</label>
+                                        <input type="text" x-model="editingMesa.nombre"
+                                               placeholder="Ej: Mesa 1, Mesa Principal..."
+                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Capacidad</label>
+                                        <input type="number" x-model="editingMesa.capacidad"
+                                               placeholder="Número de personas"
+                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
+                                        <input type="text" x-model="editingMesa.ubicacion"
+                                               placeholder="Ej: Principal, Lateral, Fondo..."
+                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                    </div>
+                                    
+                                    <div class="flex gap-3">
+                                        <button @click="saveMesa()"
+                                                class="flex-1 py-2 rounded-lg text-white font-semibold"
+                                                :style="{ backgroundColor: config?.color_principal || '#e91e63' }">
+                                            Guardar
+                                        </button>
+                                        <button @click="cancelMesa()"
+                                                class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300">
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div x-show="currentView === 'finanzas'" class="space-y-6">
                         <h1 class="text-3xl font-serif" :style="{ color: config?.color_principal || '#e91e63' }">
                             💰 Finanzas
                         </h1>
-                        <p class="text-gray-500">Módulo en construcción...</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-white p-6 rounded-xl shadow-sm">
+                                <p class="text-sm text-gray-500">Total Presupuesto</p>
+                                <p class="text-2xl font-bold text-emerald-600">$<span x-text="stats.totalPresupuesto || 0"></span></p>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-sm">
+                                <p class="text-sm text-gray-500">Total Gastos</p>
+                                <p class="text-2xl font-bold text-red-600">$<span x-text="stats.totalGastos || 0"></span></p>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-sm">
+                                <p class="text-sm text-gray-500">Saldo</p>
+                                <p class="text-2xl font-bold" :class="stats.saldo >= 0 ? 'text-emerald-600' : 'text-red-600'">
+                                    $<span x-text="stats.saldo || 0"></span>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <p class="text-gray-600">Registro de ingresos y gastos</p>
+                            <button @click="showAddFinanza = true"
+                                    class="px-4 py-2 rounded-lg text-white font-semibold"
+                                    :style="{ backgroundColor: config?.color_principal || '#e91e63' }">
+                                + Agregar Movimiento
+                            </button>
+                        </div>
+                        
+                        <!-- Finanzas Table -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Concepto</th>
+                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Categoría</th>
+                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Monto</th>
+                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Tipo</th>
+                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Fecha</th>
+                                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    <template x-for="(item, index) in finanzas" :key="index">
+                                        <tr>
+                                            <td class="px-6 py-4" x-text="item.concepto"></td>
+                                            <td class="px-6 py-4" x-text="item.categoria || 'Otros'"></td>
+                                            <td class="px-6 py-4 font-medium" :class="item.tipo === 'ingreso' ? 'text-emerald-600' : 'text-red-600'">
+                                                $<span x-text="item.monto"></span>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <span class="px-2 py-1 rounded-full text-xs"
+                                                      :class="item.tipo === 'ingreso' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
+                                                    <span x-text="item.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'"></span>
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4" x-text="item.fecha || 'N/A'"></td>
+                                            <td class="px-6 py-4">
+                                                <button @click="deleteFinanza(item.id)" class="text-red-600 hover:text-red-800">🗑️</button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Add Finanza Modal -->
+                        <div x-show="showAddFinanza" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div class="bg-white rounded-2xl p-8 max-w-md w-full">
+                                <h3 class="text-2xl font-serif mb-4" :style="{ color: config?.color_principal || '#e91e63' }">
+                                    Nuevo Movimiento
+                                </h3>
+                                
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Concepto</label>
+                                        <input type="text" x-model="editingFinanza.concepto"
+                                               placeholder="Ej: Pago de salón"
+                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Monto</label>
+                                        <input type="number" x-model="editingFinanza.monto"
+                                               placeholder="0.00" step="0.01"
+                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                                        <select x-model="editingFinanza.tipo"
+                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                            <option value="ingreso">Ingreso</option>
+                                            <option value="gasto">Gasto</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                                        <input type="text" x-model="editingFinanza.categoria"
+                                               placeholder="Ej: Lugar, Comida, Decoración..."
+                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                                        <input type="date" x-model="editingFinanza.fecha"
+                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                    </div>
+                                    
+                                    <div class="flex gap-3">
+                                        <button @click="saveFinanza()"
+                                                class="flex-1 py-2 rounded-lg text-white font-semibold"
+                                                :style="{ backgroundColor: config?.color_principal || '#e91e63' }">
+                                            Guardar
+                                        </button>
+                                        <button @click="cancelFinanza()"
+                                                class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300">
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div x-show="currentView === 'proveedores'" class="space-y-6">
@@ -269,14 +522,159 @@
                         <h1 class="text-3xl font-serif" :style="{ color: config?.color_principal || '#e91e63' }">
                             ✅ Lista de Tareas
                         </h1>
-                        <p class="text-gray-500">Módulo en construcción...</p>
+                        
+                        <div class="flex justify-between items-center">
+                            <p class="text-gray-600">Organiza todas las tareas pendientes para la boda</p>
+                            <button @click="addTarea()"
+                                    class="px-4 py-2 rounded-lg text-white font-semibold"
+                                    :style="{ backgroundColor: config?.color_principal || '#e91e63' }">
+                                + Nueva Tarea
+                            </button>
+                        </div>
+                        
+                        <!-- Tareas List -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                            <ul class="divide-y divide-gray-200">
+                                <template x-for="tarea in tareas" :key="tarea.id">
+                                    <li class="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+                                        <div class="flex items-center gap-4">
+                                            <input type="checkbox" 
+                                                   x-model="tarea.completada" 
+                                                   @change="toggleTarea(tarea)"
+                                                   class="w-5 h-5 rounded">
+                                            <div>
+                                                <p class="font-medium" :class="tarea.completada ? 'line-through text-gray-400' : ''"
+                                                   x-text="tarea.titulo"></p>
+                                                <p class="text-sm text-gray-500" x-text="tarea.prioridad || 'Media'"></p>
+                                            </div>
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <button @click="editTarea(tarea)" class="text-blue-600 hover:text-blue-800">✏️</button>
+                                            <button @click="deleteTarea(tarea.id)" class="text-red-600 hover:text-red-800">🗑️</button>
+                                        </div>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                        
+                        <!-- Add/Edit Tarea Modal -->
+                        <div x-show="showAddTarea" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div class="bg-white rounded-2xl p-8 max-w-md w-full">
+                                <h3 class="text-2xl font-serif mb-4" :style="{ color: config?.color_principal || '#e91e63' }">
+                                    <span x-text="editingTarea.id ? 'Editar Tarea' : 'Nueva Tarea'"></span>
+                                </h3>
+                                
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                                        <input type="text" x-model="editingTarea.titulo"
+                                               placeholder="Ej: Enviar invitaciones"
+                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Prioridad</label>
+                                        <select x-model="editingTarea.prioridad"
+                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                            <option value="alta">Alta</option>
+                                            <option value="media">Media</option>
+                                            <option value="baja">Baja</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="flex gap-3">
+                                        <button @click="saveTarea()"
+                                                class="flex-1 py-2 rounded-lg text-white font-semibold"
+                                                :style="{ backgroundColor: config?.color_principal || '#e91e63' }">
+                                            Guardar
+                                        </button>
+                                        <button @click="cancelTarea()"
+                                                class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300">
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div x-show="currentView === 'personalizacion'" class="space-y-6">
                         <h1 class="text-3xl font-serif" :style="{ color: config?.color_principal || '#e91e63' }">
-                            🎨 Personalización
+                            🎨 Personalización Visual
                         </h1>
-                        <p class="text-gray-500">Módulo en construcción...</p>
+                        <p class="text-gray-600">Personaliza la apariencia de tu página de boda en tiempo real</p>
+                        
+                        <div class="bg-white p-6 rounded-xl shadow-sm space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Color Principal</label>
+                                <input type="color" x-model="personalization.color_principal" 
+                                       class="w-full h-12 rounded-lg cursor-pointer">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Color Secundario</label>
+                                <input type="color" x-model="personalization.color_secundario" 
+                                       class="w-full h-12 rounded-lg cursor-pointer">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Fuente para Títulos</label>
+                                <select x-model="personalization.fuente_titulos"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                    <option value="serif">Serif (Elegante)</option>
+                                    <option value="sans-serif">Sans Serif (Moderno)</option>
+                                    <option value="script">Script (Manuscrita)</option>
+                                    <option value="display">Display (Decorativa)</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">URL del Logo</label>
+                                <input type="text" x-model="personalization.logo_url"
+                                       placeholder="https://ejemplo.com/logo.png"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">URL del Fondo</label>
+                                <input type="text" x-model="personalization.fondo_url"
+                                       placeholder="https://ejemplo.com/fondo.jpg"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Mensaje Personal</label>
+                                <textarea x-model="personalization.mensaje_personal"
+                                          rows="4"
+                                          placeholder="Escribe un mensaje especial para tus invitados..."
+                                          class="w-full px-4 py-2 border border-gray-300 rounded-lg"></textarea>
+                            </div>
+                            
+                            <button @click="savePersonalization()"
+                                    class="w-full py-3 rounded-lg text-white font-semibold transition-all hover:scale-105"
+                                    :style="{ backgroundColor: config?.color_principal || '#e91e63' }">
+                                💾 Guardar Personalización
+                            </button>
+                            
+                            <div x-show="success" class="bg-green-100 text-green-700 p-4 rounded-lg">
+                                ✅ Personalización guardada exitosamente
+                            </div>
+                            
+                            <div x-show="error" class="bg-red-100 text-red-700 p-4 rounded-lg" x-text="error"></div>
+                        </div>
+                        
+                        <!-- Preview -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm">
+                            <h3 class="text-lg font-semibold mb-4">Vista Previa</h3>
+                            <div class="p-8 rounded-lg text-center" :style="{ backgroundColor: personalization.color_principal + '20' }">
+                                <p class="text-2xl font-bold" :style="{ fontFamily: personalization.fuente_titulos, color: personalization.color_principal }">
+                                    ¡Ejemplo de Título!
+                                </p>
+                                <p class="mt-2" :style="{ fontFamily: personalization.fuente_textos, color: personalization.color_secundario }">
+                                    Este es un ejemplo de texto con los colores y fuentes seleccionados
+                                </p>
+                            </div>
+                        </div>
                     </div>
                     
                     <div x-show="currentView === 'album'" class="space-y-6">

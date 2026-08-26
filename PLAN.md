@@ -313,9 +313,9 @@ EMAIL_FROM=no-reply@tudominio.com
 
 ## 📋 CHECKLIST DE ENTREGA
 
-- [ ] Fase 0: Configuración del proyecto
-- [ ] Fase 1: Base de datos completa
-- [ ] Fase 2: Backoffice - Panel de control
+- [x] Fase 0: Configuración del proyecto
+- [x] Fase 1: Base de datos completa
+- [x] Fase 2: Backoffice - Panel de control
 - [ ] Fase 3: Backoffice - Invitados y mesas
 - [ ] Fase 4: Backoffice - Finanzas, proveedores y tareas
 - [ ] Fase 5: Landing - Sobre y tarjeta

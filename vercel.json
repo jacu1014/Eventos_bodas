@@ -1,10 +1,10 @@
 {
   "version": 2,
-  "name": "boda-digital",
+  "name": "eventos-bodas",
   "builds": [
     {
       "src": "*.html",
-      "use": "@vercel/static-build"
+      "use": "@vercel/static"
     },
     {
       "src": "assets/**/*",
@@ -64,7 +64,7 @@
       ]
     },
     {
-      "source": "assets/**/*",
+      "source": "/assets/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -73,7 +73,7 @@
       ]
     },
     {
-      "source": "*.html",
+      "source": "/(.*)\\.html",
       "headers": [
         {
           "key": "Cache-Control",

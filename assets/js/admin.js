@@ -95,6 +95,7 @@ function adminApp() {
         showAddProveedor: false,
         editingProveedor: { id: null, nombre: '', categoria: 'Lugar y Salón', monto: '', servicios_incluidos: '', contacto_nombre: '', telefono: '', email: '', pros: '', contras: '', estado: 'en evaluación' },
         proveedorFilterCategoria: 'all',
+        proveedorFilterEstado: 'all',
         
         // Tareas State
         showAddTarea: false,
@@ -693,9 +694,30 @@ function adminApp() {
         },
         
         // ==================== PROVEEDORES ====================
+        getProveedoresFiltrados() {
+            let result = this.proveedores;
+            if (this.proveedorFilterCategoria !== 'all') {
+                result = result.filter(p => p.categoria === this.proveedorFilterCategoria);
+            }
+            if (this.proveedorFilterEstado !== 'all') {
+                result = result.filter(p => p.estado === this.proveedorFilterEstado);
+            }
+            return result;
+        },
+        
         openAddProveedor() {
             this.editingProveedor = { id: null, nombre: '', categoria: 'Lugar y Salón', monto: '', servicios_incluidos: '', contacto_nombre: '', telefono: '', email: '', pros: '', contras: '', estado: 'en evaluación' };
             this.showAddProveedor = true;
+        },
+        
+        editProveedor(id) {
+            const prov = this.proveedores.find(p => p.id === id);
+            if (prov) {
+                this.editingProveedor = { ...prov };
+                this.showAddProveedor = true;
+            } else {
+                alert('Proveedor no encontrado');
+            }
         },
         
         async saveProveedor() {
@@ -900,8 +922,27 @@ function adminApp() {
             this.loading = true;
             try {
                 await supabaseClient.updateConfiguracion(this.personalization);
+                // Force refresh config from Supabase to clear cache
+                await supabaseClient.getConfiguracion(true);
                 await this.loadConfig();
-                this.triggerSuccess('¡Toda la configuración y personalización guardada exitosamente! ✨');
+                
+                // 🔔 NOTIFICAR A LA LANDING QUE HUBO CAMBIOS
+                // Guardamos timestamp en localStorage para que la landing sepa que debe recargar
+                localStorage.setItem('wedding_config_updated', Date.now().toString());
+                // También guardamos un flag específico para personalización
+                localStorage.setItem('wedding_personalization_updated', 'true');
+                
+                // Disparamos un evento personalizado para que otras pestañas lo escuchen
+                try {
+                    const event = new CustomEvent('wedding-config-updated', {
+                        detail: { timestamp: Date.now(), type: 'personalization' }
+                    });
+                    window.dispatchEvent(event);
+                } catch (e) {
+                    // Ignorar si no soporta CustomEvent
+                }
+                
+                this.triggerSuccess('¡Toda la configuración y personalización guardada exitosamente! ✨ La página de inicio se actualizará automáticamente.');
             } catch (e) {
                 alert('Error al guardar personalización: ' + e.message);
             } finally {

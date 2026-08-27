@@ -188,10 +188,13 @@ class SupabaseClient {
 
     initFromStorage() {
         try {
-            const url = localStorage.getItem(this.STORAGE_PREFIX + 'supabase_url') || (window.CONFIG?.supabase?.url !== 'https://tu-proyecto.supabase.co' ? window.CONFIG?.supabase?.url : null);
-            const key = localStorage.getItem(this.STORAGE_PREFIX + 'supabase_key') || (window.CONFIG?.supabase?.anonKey !== 'tu-anon-key-public' ? window.CONFIG?.supabase?.anonKey : null);
+            const url = localStorage.getItem(this.STORAGE_PREFIX + 'supabase_url') || window.CONFIG?.supabase?.url;
+            const key = localStorage.getItem(this.STORAGE_PREFIX + 'supabase_key') || window.CONFIG?.supabase?.anonKey;
             if (url && key && typeof supabase !== 'undefined') {
+                console.log('🔌 Initializing Supabase with URL:', url);
                 this.init(url, key);
+            } else {
+                console.warn('⚠️ Supabase credentials not found in localStorage or CONFIG');
             }
         } catch (e) {
             console.warn('Init from storage error:', e);
@@ -426,7 +429,19 @@ class SupabaseClient {
     }
 
     // ==================== CONFIGURACIÓN ====================
-    async getConfiguracion() {
+    async getConfiguracion(forceRefresh = false) {
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
@@ -473,7 +488,19 @@ class SupabaseClient {
     }
 
     // ==================== INVITADOS (CON VALIDACIÓN EXCLUSIVA Y GRUPOS) ====================
-    async getInvitados() {
+    async getInvitados(forceRefresh = false) {
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('invitados').select('*').order('nombre_completo', { ascending: true });
+                if (!error && data) {
+                    const mapped = data.map(i => this.normalizeGuest(i));
+                    this.setLocal('invitados', mapped);
+                    return { data: mapped, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getInvitados error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 const { data, error } = await this.supabase.from('invitados').select('*').order('nombre_completo', { ascending: true });
@@ -559,10 +586,11 @@ class SupabaseClient {
             notas: i.notas || '',
             cancion_sugerida: i.cancion_sugerida || '',
             mensaje_dedicatoria: i.mensaje_dedicatoria || '',
-            slug: i.slug || nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+            slug: i.slug || nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'invitado-' + Date.now(),
             invitacion_enviada: i.invitacion_enviada === true,
             confirmado_por_web: i.confirmado_por_web === true,
-            created_at: i.created_at || new Date().toISOString()
+            created_at: i.created_at || new Date().toISOString(),
+            updated_at: i.updated_at || new Date().toISOString()
         };
     }
 
@@ -581,16 +609,17 @@ class SupabaseClient {
     async searchInvitadosPorNombre(query) {
         if (!query || query.trim().length < 2) return { data: [], error: null };
         const clean = query.toLowerCase().trim();
-        const list = (await this.getInvitados()).data;
+        const { data: list } = await this.getInvitados(true);
         const matches = list.filter(i => 
-            i.nombre.toLowerCase().includes(clean) || 
+            (i.nombre && i.nombre.toLowerCase().includes(clean)) || 
+            (i.nombre_completo && i.nombre_completo.toLowerCase().includes(clean)) ||
             (i.grupo && i.grupo.toLowerCase().includes(clean)) ||
             (i.email && i.email.toLowerCase().includes(clean))
         );
         return { data: matches, error: null };
     }
 
-    async addInvitado(invitado) {
+    async addInvitado(invitado, forceRefresh = false) {
         const list = (await this.getInvitados()).data;
         const normalized = this.normalizeGuest({
             ...invitado,
@@ -601,6 +630,18 @@ class SupabaseClient {
         list.unshift(normalized);
         this.setLocal('invitados', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 const { id, ...dataToInsert } = normalized;
@@ -613,7 +654,7 @@ class SupabaseClient {
         return { data: normalized, error: null };
     }
 
-    async updateInvitado(id, updates) {
+    async updateInvitado(id, updates, forceRefresh = false) {
         const list = (await this.getInvitados()).data;
         const index = list.findIndex(i => i.id === id);
         if (index === -1) return { data: null, error: 'Invitado no encontrado' };
@@ -622,6 +663,18 @@ class SupabaseClient {
         list[index] = updated;
         this.setLocal('invitados', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 await this.supabase.from('invitados').update(updated).eq('id', id);
@@ -632,11 +685,23 @@ class SupabaseClient {
         return { data: updated, error: null };
     }
 
-    async deleteInvitado(id) {
+    async deleteInvitado(id, forceRefresh = false) {
         let list = (await this.getInvitados()).data;
         list = list.filter(i => i.id !== id);
         this.setLocal('invitados', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 await this.supabase.from('invitados').delete().eq('id', id);
@@ -722,6 +787,18 @@ class SupabaseClient {
 
     // ==================== MESAS ====================
     async getMesas() {
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 const { data, error } = await this.supabase.from('mesas').select('*').order('numero', { ascending: true });
@@ -751,6 +828,18 @@ class SupabaseClient {
         list.push(newMesa);
         this.setLocal('mesas', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 const { id, ...dataToInsert } = newMesa;
@@ -772,6 +861,18 @@ class SupabaseClient {
         list[index] = updated;
         this.setLocal('mesas', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 await this.supabase.from('mesas').update(updated).eq('id', id);
@@ -787,6 +888,18 @@ class SupabaseClient {
         list = list.filter(m => m.id !== id);
         this.setLocal('mesas', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 await this.supabase.from('mesas').delete().eq('id', id);
@@ -799,6 +912,18 @@ class SupabaseClient {
 
     // ==================== FINANZAS & PRESUPUESTO ====================
     async getFinanzas() {
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 const { data, error } = await this.supabase.from('presupuesto').select('*').order('created_at', { ascending: true });
@@ -846,6 +971,18 @@ class SupabaseClient {
         list.unshift(normalized);
         this.setLocal('finanzas', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 const { id, ...dataToInsert } = normalized;
@@ -867,6 +1004,18 @@ class SupabaseClient {
         list[index] = updated;
         this.setLocal('finanzas', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 await this.supabase.from('presupuesto').update(updated).eq('id', id);
@@ -882,6 +1031,18 @@ class SupabaseClient {
         list = list.filter(f => f.id !== id);
         this.setLocal('finanzas', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 await this.supabase.from('presupuesto').delete().eq('id', id);
@@ -894,6 +1055,18 @@ class SupabaseClient {
 
     // ==================== PROVEEDORES & COTIZACIONES ====================
     async getProveedores() {
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 const { data, error } = await this.supabase.from('cotizaciones').select('*').order('created_at', { ascending: false });
@@ -974,6 +1147,18 @@ class SupabaseClient {
         list.unshift(normalized);
         this.setLocal('proveedores', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 const { id, ...dataToInsert } = normalized;
@@ -995,6 +1180,18 @@ class SupabaseClient {
         list[index] = updated;
         this.setLocal('proveedores', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 await this.supabase.from('cotizaciones').update(updated).eq('id', id);
@@ -1010,6 +1207,18 @@ class SupabaseClient {
         list = list.filter(p => p.id !== id);
         this.setLocal('proveedores', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 await this.supabase.from('cotizaciones').delete().eq('id', id);
@@ -1044,6 +1253,18 @@ class SupabaseClient {
 
     // ==================== TAREAS & CRONOGRAMA ====================
     async getTareas() {
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 const { data, error } = await this.supabase.from('actividades').select('*').order('created_at', { ascending: true });
@@ -1089,6 +1310,18 @@ class SupabaseClient {
         list.push(normalized);
         this.setLocal('tareas', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 const { id, ...dataToInsert } = normalized;
@@ -1110,6 +1343,18 @@ class SupabaseClient {
         list[index] = updated;
         this.setLocal('tareas', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 await this.supabase.from('actividades').update(updated).eq('id', id);
@@ -1129,6 +1374,18 @@ class SupabaseClient {
         list = list.filter(t => t.id !== id);
         this.setLocal('tareas', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 await this.supabase.from('actividades').delete().eq('id', id);
@@ -1140,7 +1397,8 @@ class SupabaseClient {
     }
 
     // ==================== DESEOS & DEDICATORIAS ====================
-    async getDeseos() {
+    async getDeseos(forceRefresh = true) {
+        // Always fetch from Supabase if ready, regardless of forceRefresh
         if (this.isReady()) {
             try {
                 const { data, error } = await this.supabase.from('dedicatorias').select('*').order('created_at', { ascending: false });
@@ -1183,6 +1441,18 @@ class SupabaseClient {
         list.unshift(normalized);
         this.setLocal('deseos', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 const { id, ...dataToInsert } = normalized;
@@ -1204,6 +1474,18 @@ class SupabaseClient {
         list[index] = updated;
         this.setLocal('deseos', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 await this.supabase.from('dedicatorias').update(updated).eq('id', id);
@@ -1219,6 +1501,18 @@ class SupabaseClient {
         list = list.filter(d => d.id !== id);
         this.setLocal('deseos', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 await this.supabase.from('dedicatorias').delete().eq('id', id);
@@ -1231,6 +1525,18 @@ class SupabaseClient {
 
     // ==================== CANCIONES SUGERIDAS ====================
     async getCanciones() {
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 const { data, error } = await this.supabase.from('canciones_sugeridas').select('*').order('created_at', { ascending: false });
@@ -1259,6 +1565,18 @@ class SupabaseClient {
         list.unshift(newCancion);
         this.setLocal('canciones', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 const { id, ...dataToInsert } = newCancion;
@@ -1275,6 +1593,18 @@ class SupabaseClient {
         list = list.filter(c => c.id !== id);
         this.setLocal('canciones', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 await this.supabase.from('canciones_sugeridas').delete().eq('id', id);
@@ -1286,7 +1616,8 @@ class SupabaseClient {
     }
 
     // ==================== ÁLBUM DE FOTOS & CHAT ====================
-    async getFotos(limit = 100, soloAprobadas = false) {
+    async getFotos(limit = 100, soloAprobadas = false, forceRefresh = true) {
+        // Always fetch from Supabase if ready, regardless of forceRefresh
         if (this.isReady()) {
             try {
                 let query = this.supabase.from('album_fotos').select('*').order('created_at', { ascending: false });
@@ -1347,7 +1678,7 @@ class SupabaseClient {
         };
     }
 
-    async uploadFoto(fileOrBase64, metadata = {}) {
+    async uploadFoto(fileOrBase64, metadata = {}, forceRefresh = false) {
         let photoUrl = '';
         let fileToUpload = fileOrBase64;
 
@@ -1359,7 +1690,19 @@ class SupabaseClient {
         if (typeof fileToUpload === 'string') {
             photoUrl = fileToUpload;
         } else if (fileToUpload instanceof File || fileToUpload instanceof Blob) {
-            if (this.isReady()) {
+            if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
+        if (this.isReady()) {
                 try {
                     const fileExt = (fileToUpload.name || 'image.jpg').split('.').pop();
                     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -1400,6 +1743,18 @@ class SupabaseClient {
         list.unshift(newFoto);
         this.setLocal('fotos', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 const { id, ...dataToInsert } = newFoto;
@@ -1413,7 +1768,7 @@ class SupabaseClient {
         return { data: newFoto, error: null };
     }
 
-    async toggleAprobarFoto(id) {
+    async toggleAprobarFoto(id, forceRefresh = false) {
         const list = (await this.getFotos(100, false)).data;
         const index = list.findIndex(f => f.id === id);
         if (index === -1) return { data: null, error: 'Foto no encontrada' };
@@ -1421,6 +1776,18 @@ class SupabaseClient {
         list[index].aprobada = !list[index].aprobada;
         this.setLocal('fotos', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 await this.supabase.from('album_fotos').update({ aprobada: list[index].aprobada }).eq('id', id);
@@ -1431,11 +1798,23 @@ class SupabaseClient {
         return { data: list[index], error: null };
     }
 
-    async deleteFoto(id) {
+    async deleteFoto(id, forceRefresh = false) {
         let list = (await this.getFotos(100, false)).data;
         list = list.filter(f => f.id !== id);
         this.setLocal('fotos', list);
 
+        if (forceRefresh && this.isReady()) {
+            try {
+                const { data, error } = await this.supabase.from('boda_config').select('*').limit(1).single();
+                if (!error && data) {
+                    const merged = { ...DEFAULT_CONFIG, ...data };
+                    this.setLocal('config', merged);
+                    return { data: merged, error: null };
+                }
+            } catch (e) {
+                console.warn('Supabase getConfig error (forced):', e);
+            }
+        }
         if (this.isReady()) {
             try {
                 await this.supabase.from('album_fotos').delete().eq('id', id);

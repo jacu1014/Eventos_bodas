@@ -17,7 +17,7 @@ function landingApp() {
             titulo: '¡Nos Casamos!',
             novia_nombre: 'Valentina',
             novio_nombre: 'Sebastián',
-            novios: 'Valentina & Sebastián',
+            get novios() { return `${this.novia_nombre} & ${this.novio_nombre}`; },
             frase_amor: 'El amor no se mira, se siente, y aún más cuando ustedes nos acompañan a celebrarlo.',
             fecha_boda: '2026-10-24T16:00:00',
             lugar_ceremonia: 'Capilla Nuestra Señora del Carmen',
@@ -92,11 +92,15 @@ function landingApp() {
         async init() {
             try {
                 await this.loadConfig();
-                await this.loadWishes();
-                await this.loadPhotos();
+                // Force fresh data from Supabase with true parameter
+                await this.loadWishes(true);
+                await this.loadPhotos(true);
                 this.initCountdown();
                 await this.detectGuestFromUrl();
                 this.applyCustomStyles();
+                
+                // 🔔 Configurar actualización automática desde el panel de administración
+                this.setupAutoRefresh();
                 
                 // Rotación automática de deseos
                 setInterval(() => {
@@ -112,24 +116,39 @@ function landingApp() {
         },
         
         async loadConfig() {
-            if (typeof supabaseClient === 'undefined') return;
-            const { data } = await supabaseClient.getConfiguracion();
-            if (data) {
-                this.config = { ...this.config, ...data };
+            if (typeof supabaseClient === 'undefined') {
+                console.warn('supabaseClient not available, using fallback config');
+                return;
+            }
+            try {
+                const { data } = await supabaseClient.getConfiguracion(true);
+                console.log('🔍 Landing page fetching config from Supabase (forced):', data);
+                if (data) {
+                    // Merge data and explicitly update the name fields
+                    this.config = { ...this.config, ...data };
+                    // Ensure names are set properly
+                    if (data.novia_nombre) this.config.novia_nombre = data.novia_nombre;
+                    if (data.novio_nombre) this.config.novio_nombre = data.novio_nombre;
+                    // Apply theme colors to CSS variables
+                    this.applyCustomStyles();
+                    console.log('✅ Config loaded - Names:', this.config.novia_nombre, '&', this.config.novio_nombre);
+                }
+            } catch (error) {
+                console.error('Error loading config from Supabase:', error);
             }
         },
         
-        async loadWishes() {
+        async loadWishes(forceRefresh = true) {
             if (typeof supabaseClient === 'undefined') return;
-            const { data } = await supabaseClient.getDeseos();
+            const { data } = await supabaseClient.getDeseos(forceRefresh);
             if (data) {
                 this.wishes = data.filter(d => d.aprobado !== false);
             }
         },
         
-        async loadPhotos() {
+        async loadPhotos(forceRefresh = true) {
             if (typeof supabaseClient === 'undefined') return;
-            const { data } = await supabaseClient.getFotos(100, true);
+            const { data } = await supabaseClient.getFotos(100, true, forceRefresh);
             if (data) {
                 this.photos = data;
             }
@@ -176,8 +195,20 @@ function landingApp() {
             }
             
             this.searchSearched = true;
-            const { data } = await supabaseClient.searchInvitadosPorNombre(this.searchQuery);
-            this.searchResults = data || [];
+            try {
+                const { data, error } = await supabaseClient.searchInvitadosPorNombre(this.searchQuery);
+                if (error) {
+                    console.error('Error searching guests:', error);
+                    this.searchResults = [];
+                    return;
+                }
+                this.searchResults = data || [];
+                console.log('🔍 Search results:', this.searchResults);
+            } catch (error) {
+                console.error('Error in searchGuest:', error);
+                this.searchResults = [];
+                this.triggerToast('Error al buscar invitados. Por favor intenta de nuevo.');
+            }
         },
         
         selectGuestForRSVP(guest) {
@@ -256,8 +287,162 @@ function landingApp() {
         applyCustomStyles() {
             const primary = this.config.color_principal || '#0F4C3A';
             const accent = this.config.color_secundario || '#D4AF37';
-            document.documentElement.style.setProperty('--color-primary', primary);
-            document.documentElement.style.setProperty('--color-accent', accent);
+            
+            // Set CSS variables for the theme
+            const root = document.documentElement;
+            root.style.setProperty('--color-primary', primary);
+            root.style.setProperty('--color-accent', accent);
+            
+            // Also set Tailwind-compatible CSS variables (emerald, amber, gold)
+            root.style.setProperty('--emerald-950', primary);
+            root.style.setProperty('--emerald-900', this.darkenColor(primary, 15));
+            root.style.setProperty('--emerald-800', this.darkenColor(primary, 5));
+            root.style.setProperty('--emerald-700', this.lightenColor(primary, 15));
+            root.style.setProperty('--amber-300', accent);
+            root.style.setProperty('--amber-400', this.lightenColor(accent, 10));
+            root.style.setProperty('--gold-500', accent);
+            root.style.setProperty('--gold-600', this.darkenColor(accent, 15));
+            
+            // Dynamically inject CSS rules that use the CSS variables
+            const styleId = 'dynamic-theme-styles';
+            let styleTag = document.getElementById(styleId);
+            if (!styleTag) {
+                styleTag = document.createElement('style');
+                styleTag.id = styleId;
+                document.head.appendChild(styleTag);
+            }
+            
+            // Generate CSS rules that override Tailwind classes with CSS variables
+            styleTag.textContent = `
+                /* Dynamic theme overrides */
+                .bg-emerald-950 { background-color: var(--emerald-950) !important; }
+                .bg-emerald-900 { background-color: var(--emerald-900) !important; }
+                .bg-emerald-800 { background-color: var(--emerald-800) !important; }
+                .bg-emerald-700 { background-color: var(--emerald-700) !important; }
+                .text-amber-300 { color: var(--amber-300) !important; }
+                .text-amber-400 { color: var(--amber-400) !important; }
+                .text-gold, .text-gold-500 { color: var(--gold-500) !important; }
+                .border-gold, .border-gold-500 { border-color: var(--gold-500) !important; }
+                .bg-gold-500 { background-color: var(--gold-500) !important; }
+                .bg-gold-600 { background-color: var(--gold-600) !important; }
+                .gold-gradient {
+                    background: linear-gradient(135deg, var(--gold-500) 0%, var(--gold-600) 50%, var(--gold-600) 100%) !important;
+                }
+                .emerald-gradient {
+                    background: linear-gradient(135deg, var(--emerald-950) 0%, var(--emerald-900) 100%) !important;
+                }
+                .hover\:bg-emerald-800:hover { background-color: var(--emerald-800) !important; }
+                .hover\:bg-emerald-700:hover { background-color: var(--emerald-700) !important; }
+                .hover\:text-amber-300:hover { color: var(--amber-300) !important; }
+                .border-amber-400 { border-color: var(--amber-400) !important; }
+                .text-emerald-950 { color: var(--emerald-950) !important; }
+                .text-emerald-900 { color: var(--emerald-900) !important; }
+                .text-emerald-800 { color: var(--emerald-800) !important; }
+                .text-emerald-700 { color: var(--emerald-700) !important; }
+                .ring-amber-400 { ring-color: var(--amber-400) !important; }
+                .focus\:ring-amber-400:focus { ring-color: var(--amber-400) !important; }
+                .focus\:border-amber-400:focus { border-color: var(--amber-400) !important; }
+            `;
+            
+            // Apply the hero image if available
+            const heroImg = this.config.hero_image_url || this.config.fondo;
+            if (heroImg) {
+                const heroElements = document.querySelectorAll('.hero-bg');
+                heroElements.forEach(el => {
+                    el.style.backgroundImage = `url(${heroImg})`;
+                });
+            }
+        },
+        
+        /**
+         * Configura la escucha automática de cambios en la personalización
+         * desde el panel de administración.
+         */
+        setupAutoRefresh() {
+            // Escuchar cambios en localStorage (cuando otra pestaña actualiza)
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'wedding_config_updated' || e.key === 'wedding_personalization_updated') {
+                    console.log('🔄 Detected config update from another tab, refreshing...');
+                    this.refreshConfigAndStyles();
+                }
+            });
+            
+            // Escuchar evento personalizado (misma pestaña)
+            window.addEventListener('wedding-config-updated', (e) => {
+                console.log('🔄 Detected config update event, refreshing...', e.detail);
+                this.refreshConfigAndStyles();
+            });
+            
+            // También revisar periódicamente por cambios (fallback)
+            let lastUpdate = localStorage.getItem('wedding_config_updated') || '0';
+            setInterval(() => {
+                const currentUpdate = localStorage.getItem('wedding_config_updated') || '0';
+                if (currentUpdate !== lastUpdate) {
+                    console.log('🔄 Polling detected config change, refreshing...');
+                    lastUpdate = currentUpdate;
+                    this.refreshConfigAndStyles();
+                }
+            }, 5000); // Cada 5 segundos
+            
+            console.log('✅ Auto-refresh configurado para personalización');
+        },
+        
+        /**
+         * Recarga la configuración desde Supabase y reaplica los estilos.
+         */
+        async refreshConfigAndStyles() {
+            try {
+                console.log('🔄 Refrescando configuración y estilos...');
+                
+                // Verificar que supabaseClient esté disponible
+                if (typeof supabaseClient === 'undefined' || !supabaseClient.isReady()) {
+                    console.warn('⚠️ supabaseClient no disponible, no se puede refrescar');
+                    return;
+                }
+                
+                // Limpiar caché forzando recarga desde Supabase
+                const configResult = await supabaseClient.getConfiguracion(true);
+                if (configResult && configResult.data) {
+                    const data = configResult.data;
+                    // Actualizar config
+                    this.config = { ...this.config, ...data };
+                    if (data.novia_nombre) this.config.novia_nombre = data.novia_nombre;
+                    if (data.novio_nombre) this.config.novio_nombre = data.novio_nombre;
+                    
+                    // Reaplicar estilos
+                    this.applyCustomStyles();
+                    
+                    // Actualizar título de la página
+                    document.title = `${this.config.novia_nombre} & ${this.config.novio_nombre} 💍✨`;
+                    
+                    // Notificar al usuario (solo si el cambio es significativo)
+                    this.triggerToast('🎨 La personalización de la boda se ha actualizado automáticamente.');
+                    
+                    console.log('✅ Configuración y estilos refrescados exitosamente');
+                } else {
+                    console.warn('⚠️ No se recibieron datos de configuración');
+                }
+            } catch (error) {
+                console.error('Error refreshing config:', error);
+            }
+        },
+        
+        darkenColor(hex, percent) {
+            if (!hex) return hex;
+            let num = parseInt(hex.replace('#', ''), 16);
+            let r = Math.max(0, (num >> 16) - percent);
+            let g = Math.max(0, ((num >> 8) & 0x00FF) - percent);
+            let b = Math.max(0, (num & 0x0000FF) - percent);
+            return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
+        },
+        
+        lightenColor(hex, percent) {
+            if (!hex) return hex;
+            let num = parseInt(hex.replace('#', ''), 16);
+            let r = Math.min(255, (num >> 16) + percent);
+            let g = Math.min(255, ((num >> 8) & 0x00FF) + percent);
+            let b = Math.min(255, (num & 0x0000FF) + percent);
+            return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
         },
         
         async submitRSVP() {

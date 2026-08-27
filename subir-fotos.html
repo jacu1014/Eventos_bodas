@@ -6,7 +6,7 @@
     </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subir Fotos a la Boda 📸 | Valentina & Sebastián</title>
+    <title x-text="typeof config !== 'undefined' && config.novia_nombre && config.novio_nombre ? `Subir Fotos a la Boda 📸 | ${config.novia_nombre} & ${config.novio_nombre}` : 'Subir Fotos a la Boda 📸 | Valentina & Sebastián'"></title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -39,7 +39,7 @@
         <div class="text-center space-y-1">
             <div class="text-4xl">📸 ✨</div>
             <h1 class="text-3xl font-serif font-bold text-emerald-950">Comparte tus Fotos</h1>
-            <p class="text-xs text-gray-500 font-medium" x-text="`Boda ${config.novios || 'Valentina & Sebastián'}`"></p>
+            <p class="text-xs text-gray-500 font-medium" x-text="config.novia_nombre && config.novio_nombre ? `Boda ${config.novia_nombre} & ${config.novio_nombre}` : 'Boda Valentina & Sebastián'"></p>
         </div>
         
         <!-- Aviso de Álbum Pausado -->

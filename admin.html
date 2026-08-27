@@ -6,13 +6,10 @@
     </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title x-text="typeof config !== 'undefined' && config.novia_nombre && config.novio_nombre ? `Panel de Administración - ${config.novia_nombre} & ${config.novio_nombre} 💍` : 'Panel de Administración - Boda Digital 💍'"></title>
+    <title>Panel de Administración - Boda Digital 💍</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -157,31 +154,29 @@
                     <h2 class="font-serif font-bold text-emerald-950 text-base" x-text="config?.novios || 'Boda Digital'"></h2>
                 </div>
                 <button @click="mobileSidebarOpen = !mobileSidebarOpen" class="p-2 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200">
-                    <span class="text-xl">☰</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
                 </button>
             </header>
             
-            <!-- Backdrop Móvil -->
-            <div x-show="mobileSidebarOpen" @click="mobileSidebarOpen = false" x-transition:enter="transition-opacity ease-linear duration-200"
-                 class="fixed inset-0 bg-black/50 z-40 md:hidden"></div>
-
-            <!-- Sidebar (Escritorio + Drawer Móvil) -->
-            <aside class="w-64 bg-white border-r border-gray-200 min-h-screen fixed md:sticky left-0 top-0 overflow-y-auto z-50 shadow-sm transition-transform duration-300 md:translate-x-0"
+            <!-- Sidebar Navegación -->
+            <aside class="md:w-64 md:min-h-screen bg-white border-r border-gray-200 shadow-xs md:shadow-none flex-shrink-0 fixed md:static inset-0 z-40 transition-transform duration-300 ease-in-out"
                    :class="mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
-                
-                <div class="p-5 border-b border-gray-100 flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="text-2xl">💍</div>
-                        <div>
-                            <h2 class="text-base font-serif font-bold text-emerald-950">Boda Digital</h2>
-                            <p class="text-xs text-gray-500 truncate max-w-[130px]" x-text="user?.email || 'Novios'"></p>
-                        </div>
+                <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">💍</span>
+                        <span class="font-serif font-bold text-emerald-950 text-sm">Boda Digital</span>
                     </div>
-                    <button @click="mobileSidebarOpen = false" class="md:hidden text-gray-400 text-lg font-bold">&times;</button>
+                    <button @click="mobileSidebarOpen = false" class="md:hidden p-1 text-gray-500 hover:text-gray-800">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
                 </div>
                 
                 <nav class="p-4 space-y-1 text-sm font-medium">
-                    <button @click="currentView = 'dashboard'; currentViewChanged(); mobileSidebarOpen = false" 
+                    <button @click="currentView = 'dashboard'; mobileSidebarOpen = false" 
                             class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all"
                             :class="currentView === 'dashboard' ? 'bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'text-gray-600 hover:bg-gray-100'">
                         📊 Dashboard
@@ -197,52 +192,45 @@
                     <button @click="currentView = 'mesas'; mobileSidebarOpen = false" 
                             class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all"
                             :class="currentView === 'mesas' ? 'bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'text-gray-600 hover:bg-gray-100'">
-                        <span>🪑 Mesas</span>
-                        <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full" x-text="mesas.length"></span>
+                        <span>🪑 Distribución de Mesas</span>
+                        <span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded-full" x-text="mesas.length"></span>
                     </button>
                     
-                    <button @click="currentView = 'finanzas'; currentViewChanged(); mobileSidebarOpen = false" 
-                            class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all"
+                    <button @click="currentView = 'finanzas'; mobileSidebarOpen = false" 
+                            class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all"
                             :class="currentView === 'finanzas' ? 'bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'text-gray-600 hover:bg-gray-100'">
-                        💰 Finanzas & Presupuesto
+                        <span>💰 Presupuesto & Finanzas</span>
+                        <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full" x-text="finanzas.length"></span>
                     </button>
                     
                     <button @click="currentView = 'proveedores'; mobileSidebarOpen = false" 
                             class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all"
                             :class="currentView === 'proveedores' ? 'bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'text-gray-600 hover:bg-gray-100'">
-                        <span>📦 Proveedores</span>
-                        <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full" x-text="proveedores.length"></span>
+                        <span>📦 Proveedores & Cotizaciones</span>
+                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded-full" x-text="proveedores.length"></span>
                     </button>
                     
                     <button @click="currentView = 'tareas'; mobileSidebarOpen = false" 
                             class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all"
                             :class="currentView === 'tareas' ? 'bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'text-gray-600 hover:bg-gray-100'">
-                        <span>✅ Tareas</span>
-                        <span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded-full" x-text="`${stats.porcentajeTareas || 0}%`"></span>
+                        <span>✅ Planificador & Tareas</span>
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full" x-text="tareas.length"></span>
                     </button>
                     
                     <button @click="currentView = 'personalizacion'; mobileSidebarOpen = false" 
                             class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all"
                             :class="currentView === 'personalizacion' ? 'bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'text-gray-600 hover:bg-gray-100'">
-                        🎨 Personalización & Cuentas
+                        🎨 Personalizar Boda
                     </button>
                     
                     <button @click="currentView = 'album'; mobileSidebarOpen = false" 
-                            class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all"
+                            class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all"
                             :class="currentView === 'album' ? 'bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'text-gray-600 hover:bg-gray-100'">
-                        <span>📸 Álbum de Fotos</span>
-                        <span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full" x-text="fotos.length"></span>
-                    </button>
-                    
-                    <button @click="currentView = 'deseos'; mobileSidebarOpen = false" 
-                            class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all"
-                            :class="currentView === 'deseos' ? 'bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'text-gray-600 hover:bg-gray-100'">
-                        <span>💝 Deseos & Música</span>
-                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded-full" x-text="deseos.length"></span>
+                        📸 Álbum de Fotos
                     </button>
                     
                     <div class="pt-4 border-t border-gray-100 space-y-1">
-                        <a href="/" target="_blank" class="w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-all text-xs font-semibold">
+                        <a href="./index.html" target="_blank" class="w-full flex items-center gap-3 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-all text-xs font-semibold">
                             🌐 Ver Web de Invitados
                         </a>
                         <button @click="logout" class="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 rounded-xl transition-all text-xs font-semibold">
@@ -253,929 +241,129 @@
             </aside>
             
             <!-- Contenido Principal -->
-            <main class="flex-1 p-4 md:p-8 min-h-screen max-w-full overflow-x-hidden">
-                
-                <!-- Notificación Toast de Éxito -->
-                <div x-show="success" x-transition class="fixed bottom-6 right-6 bg-emerald-950 text-white px-5 py-3 rounded-2xl shadow-xl z-50 flex items-center gap-3 border border-amber-400">
-                    <span class="text-xl">✨</span>
-                    <span class="text-sm font-semibold" x-text="successMessage || 'Acción completada con éxito'"></span>
-                </div>
-
-                <!-- ========================================================
-                     VISTA 1: DASHBOARD
-                     ======================================================== -->
-                <div x-show="currentView === 'dashboard'" class="space-y-6">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-emerald-950">📊 Resumen General</h1>
-                            <p class="text-xs md:text-sm text-gray-500">Métricas y estado general de la boda</p>
-                        </div>
-                        <button @click="openPrintableAlbum" class="px-4 py-2 rounded-xl text-white font-semibold flex items-center justify-center gap-2 shadow text-xs md:text-sm"
-                                :style="{ backgroundColor: personalization.color_principal || '#0F4C3A' }">
-                            📖 Generar Álbum Imprimible
-                        </button>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                        <div class="bg-white p-4 md:p-6 rounded-2xl shadow-xs border border-gray-100">
-                            <p class="text-xs font-semibold text-gray-500">Total Invitados</p>
-                            <p class="text-2xl md:text-3xl font-bold mt-1 text-emerald-950" x-text="stats.totalInvitados || 0"></p>
-                            <p class="text-[11px] text-gray-400 mt-1" x-text="`${stats.confirmados || 0} confirmados`"></p>
-                        </div>
-                        
-                        <div class="bg-white p-4 md:p-6 rounded-2xl shadow-xs border border-gray-100">
-                            <p class="text-xs font-semibold text-gray-500">Confirmación Asistencia</p>
-                            <p class="text-2xl md:text-3xl font-bold mt-1 text-emerald-700" x-text="`${stats.porcentajeConfirmados || 0}%`"></p>
-                            <p class="text-[11px] text-gray-400 mt-1" x-text="`${stats.noAsistiran || 0} declinados`"></p>
-                        </div>
-                        
-                        <div class="bg-white p-4 md:p-6 rounded-2xl shadow-xs border border-gray-100">
-                            <p class="text-xs font-semibold text-gray-500">Saldo Pendiente</p>
-                            <p class="text-lg md:text-2xl font-bold mt-1 text-amber-600" x-text="formatCurrency(stats.saldo)"></p>
-                            <p class="text-[11px] text-gray-400 mt-1" x-text="`Gastos: ${formatCurrency(stats.totalGastos)}`"></p>
-                        </div>
-                        
-                        <div class="bg-white p-4 md:p-6 rounded-2xl shadow-xs border border-gray-100">
-                            <p class="text-xs font-semibold text-gray-500">Progreso de Tareas</p>
-                            <p class="text-2xl md:text-3xl font-bold mt-1 text-teal-700" x-text="`${stats.porcentajeTareas || 0}%`"></p>
-                            <p class="text-[11px] text-gray-400 mt-1" x-text="`${stats.tareasCompletadas || 0}/${stats.totalTareas || 0} listas`"></p>
-                        </div>
-                    </div>
-                    
-                    <!-- Gráficos -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-white p-5 md:p-6 rounded-2xl shadow-xs border border-gray-100">
-                            <h3 class="text-base font-bold text-gray-800 mb-4">👥 Estado de Confirmación de Invitados</h3>
-                            <div class="h-64 flex items-center justify-center">
-                                <canvas id="chartInvitados"></canvas>
+            <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+                <!-- Aquí se renderiza el contenido dinámico según currentView -->
+                <div class="max-w-6xl mx-auto">
+                    <!-- Dashboard -->
+                    <div x-show="currentView === 'dashboard'">
+                        <h1 class="text-2xl font-serif font-bold text-emerald-950 mb-6">📊 Dashboard de la Boda</h1>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                                <p class="text-xs text-gray-500">Invitados</p>
+                                <p class="text-2xl font-bold text-emerald-800" x-text="stats.totalInvitados">0</p>
+                                <p class="text-xs text-gray-400" x-text="stats.porcentajeConfirmados + '% confirmados'"></p>
+                            </div>
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                                <p class="text-xs text-gray-500">Mesas</p>
+                                <p class="text-2xl font-bold text-emerald-800" x-text="stats.totalMesas">0</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                                <p class="text-xs text-gray-500">Presupuesto</p>
+                                <p class="text-2xl font-bold text-emerald-800" x-text="'$' + stats.totalPresupuesto.toLocaleString()">0</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                                <p class="text-xs text-gray-500">Tareas</p>
+                                <p class="text-2xl font-bold text-emerald-800" x-text="stats.porcentajeTareas + '%'"></p>
                             </div>
                         </div>
-                        
-                        <div class="bg-white p-5 md:p-6 rounded-2xl shadow-xs border border-gray-100">
-                            <h3 class="text-base font-bold text-gray-800 mb-4">💰 Gastos por Categoría</h3>
-                            <div class="h-64 flex items-center justify-center">
-                                <canvas id="chartPresupuesto"></canvas>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                            <h2 class="text-sm font-bold text-gray-700 mb-3">Progreso de Confirmaciones</h2>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-emerald-700 h-2.5 rounded-full transition-all duration-500" :style="{ width: stats.porcentajeConfirmados + '%' }"></div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ========================================================
-                     VISTA 2: INVITADOS & ENVÍO DE WHATSAPP
-                     ======================================================== -->
-                <div x-show="currentView === 'invitados'" class="space-y-6">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-emerald-950">👥 Gestión de Invitados</h1>
-                            <p class="text-xs md:text-sm text-gray-500">Genera invitaciones individuales y grupales para WhatsApp sin costo ni APIs</p>
-                        </div>
-                        <div class="flex gap-2 flex-wrap">
-                            <button @click="openWhatsAppModal(null, null)" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs flex items-center gap-1.5">
-                                <span>📲</span> Enviar por WhatsApp
-                            </button>
-                            <button @click="exportCSV" class="px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs">
-                                📥 Exportar CSV
-                            </button>
-                            <button @click="openAddInvitado" class="px-3.5 py-2 rounded-xl text-white font-semibold text-xs shadow-xs"
-                                    :style="{ backgroundColor: personalization.color_principal || '#0F4C3A' }">
-                                ➕ Nuevo Invitado / Familia
-                            </button>
+                            <p class="text-xs text-gray-500 mt-2" x-text="stats.confirmados + ' confirmados de ' + stats.totalInvitados + ' invitados'"></p>
                         </div>
                     </div>
                     
-                    <!-- Filtros y Búsqueda -->
-                    <div class="bg-white p-4 rounded-2xl shadow-xs border border-gray-100 flex flex-wrap gap-3 items-center">
-                        <div class="flex-1 min-w-[200px]">
-                            <input type="text" x-model="invitadoSearch" placeholder="🔍 Buscar por nombre, grupo o mesa..."
-                                   class="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs md:text-sm focus:ring-2 focus:ring-emerald-700">
-                        </div>
-                        <div>
-                            <select x-model="invitadoFilterAsistencia" class="px-3 py-2 border border-gray-200 rounded-xl text-xs bg-white">
-                                <option value="all">Todos los Estados</option>
-                                <option value="confirmados">Solo Confirmados</option>
-                                <option value="pendientes">Solo Pendientes</option>
-                                <option value="no_asistiran">No Asistirán</option>
-                            </select>
-                        </div>
-                        <div>
-                            <select x-model="invitadoFilterEnvio" class="px-3 py-2 border border-gray-200 rounded-xl text-xs bg-white">
-                                <option value="all">Todos los Envíos</option>
-                                <option value="enviados">Invitación Enviada</option>
-                                <option value="pendientes">Pendiente de Envío</option>
-                            </select>
+                    <!-- Invitados -->
+                    <div x-show="currentView === 'invitados'">
+                        <h1 class="text-2xl font-serif font-bold text-emerald-950 mb-6">👥 Invitados</h1>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                            <p class="text-sm text-gray-600">Módulo de gestión de invitados con envío de WhatsApp y RSVP.</p>
+                            <button @click="showAddInvitado = true" class="mt-3 px-4 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">+ Agregar Invitado</button>
                         </div>
                     </div>
                     
-                    <!-- Tabla de Invitados -->
-                    <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs md:text-sm">
-                                <thead class="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold uppercase text-[11px]">
-                                    <tr>
-                                        <th class="px-4 py-3.5">Nombre / Familia</th>
-                                        <th class="px-4 py-3.5">Grupo</th>
-                                        <th class="px-4 py-3.5">Asistencia</th>
-                                        <th class="px-4 py-3.5">Pases</th>
-                                        <th class="px-4 py-3.5">Mesa</th>
-                                        <th class="px-4 py-3.5">Envío</th>
-                                        <th class="px-4 py-3.5 text-right">Acciones WhatsApp</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    <template x-for="invitado in filteredInvitados()" :key="invitado.id">
-                                        <tr class="hover:bg-gray-50/80 transition-all">
-                                            <td class="px-4 py-3.5 font-semibold text-gray-900">
-                                                <div x-text="invitado.nombre"></div>
-                                                <div class="text-[11px] text-gray-400 font-normal" x-text="invitado.telefono || invitado.email || 'Sin contacto'"></div>
-                                            </td>
-                                            <td class="px-4 py-3.5">
-                                                <span class="px-2 py-0.5 rounded-md text-[11px] bg-purple-50 text-purple-700 font-medium" x-text="invitado.grupo || 'General'"></span>
-                                            </td>
-                                            <td class="px-4 py-3.5">
-                                                <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                                                      :class="invitado.asistira === true ? 'bg-emerald-100 text-emerald-800' : (invitado.asistira === false ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800')">
-                                                    <span x-text="invitado.asistira === true ? 'Confirmado' : (invitado.asistira === false ? 'Declinado' : 'Pendiente')"></span>
-                                                </span>
-                                            </td>
-                                            <td class="px-4 py-3.5 font-medium" x-text="`${(invitado.pases_adultos || 1) + (invitado.pases_ninos || 0)} pases`"></td>
-                                            <td class="px-4 py-3.5 text-gray-600" x-text="invitado.mesa || 'Sin asignar'"></td>
-                                            <td class="px-4 py-3.5">
-                                                <span class="px-2 py-0.5 rounded-md text-[11px] font-medium"
-                                                      :class="invitado.invitacion_enviada ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'"
-                                                      x-text="invitado.invitacion_enviada ? 'Enviada 📲' : 'Pendiente ⏳'"></span>
-                                            </td>
-                                            <td class="px-4 py-3.5 text-right space-x-1">
-                                                <button @click="openWhatsAppModal(invitado, null)" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold" title="Generar tarjeta de WhatsApp">
-                                                    📲 WhatsApp
-                                                </button>
-                                                <button @click="editInvitado(invitado)" class="text-blue-600 hover:text-blue-800 p-1 text-xs" title="Editar">✏️</button>
-                                                <button @click="deleteInvitado(invitado.id)" class="text-red-500 hover:text-red-700 p-1 text-xs" title="Eliminar">🗑️</button>
-                                            </td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
+                    <!-- Mesas -->
+                    <div x-show="currentView === 'mesas'">
+                        <h1 class="text-2xl font-serif font-bold text-emerald-950 mb-6">🪑 Distribución de Mesas</h1>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                            <p class="text-sm text-gray-600">Diseña la distribución de mesas de tu boda.</p>
+                            <button @click="showAddMesa = true" class="mt-3 px-4 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">+ Crear Mesa</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Finanzas -->
+                    <div x-show="currentView === 'finanzas'">
+                        <h1 class="text-2xl font-serif font-bold text-emerald-950 mb-6">💰 Presupuesto & Finanzas</h1>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                            <p class="text-sm text-gray-600">Controla el presupuesto, gastos e ingresos de tu boda.</p>
+                            <button @click="showAddFinanza = true" class="mt-3 px-4 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">+ Agregar Registro</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Proveedores -->
+                    <div x-show="currentView === 'proveedores'">
+                        <h1 class="text-2xl font-serif font-bold text-emerald-950 mb-6">📦 Proveedores & Cotizaciones</h1>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                            <p class="text-sm text-gray-600">Gestiona proveedores y cotizaciones para tu boda.</p>
+                            <button @click="showAddProveedor = true" class="mt-3 px-4 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">+ Agregar Proveedor</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Tareas -->
+                    <div x-show="currentView === 'tareas'">
+                        <h1 class="text-2xl font-serif font-bold text-emerald-950 mb-6">✅ Planificador & Tareas</h1>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                            <p class="text-sm text-gray-600">Organiza las tareas previas a la boda.</p>
+                            <button @click="showAddTarea = true" class="mt-3 px-4 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">+ Agregar Tarea</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Personalización -->
+                    <div x-show="currentView === 'personalizacion'">
+                        <h1 class="text-2xl font-serif font-bold text-emerald-950 mb-6">🎨 Personalizar Boda</h1>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                            <p class="text-sm text-gray-600">Cambia colores, textos, imágenes y más.</p>
+                            <button @click="savePersonalization" class="mt-3 px-4 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">Guardar Cambios</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Álbum -->
+                    <div x-show="currentView === 'album'">
+                        <h1 class="text-2xl font-serif font-bold text-emerald-950 mb-6">📸 Álbum de Fotos</h1>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                            <p class="text-sm text-gray-600">Administra las fotos subidas por los invitados.</p>
+                            <button @click="openAlbumManager" class="mt-3 px-4 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">Gestionar Álbum</button>
                         </div>
                     </div>
                 </div>
-
-                <!-- ========================================================
-                     VISTA 3: MESAS (DRAG & DROP)
-                     ======================================================== -->
-                <div x-show="currentView === 'mesas'" class="space-y-6">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-emerald-950">🪑 Distribución de Mesas</h1>
-                            <p class="text-xs md:text-sm text-gray-500">Organiza el plano y asigna a los invitados a sus respectivas mesas</p>
-                        </div>
-                        <button @click="openAddMesa" class="px-3.5 py-2 rounded-xl text-white font-semibold text-xs shadow-xs"
-                                :style="{ backgroundColor: personalization.color_principal || '#0F4C3A' }">
-                            ➕ Crear Mesa
-                        </button>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <!-- Invitados sin Mesa -->
-                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-gray-100">
-                            <h3 class="font-bold text-sm text-gray-800 mb-3 flex items-center justify-between">
-                                <span>🚶 Sin Mesa Asignada</span>
-                                <span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full"
-                                      x-text="invitados.filter(i => !i.mesa || i.mesa === 'Sin asignar').length"></span>
-                            </h3>
-                            <div class="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-                                <template x-for="inv in invitados.filter(i => !i.mesa || i.mesa === 'Sin asignar')" :key="inv.id">
-                                    <div draggable="true" @dragstart="startDragInvitado($event, inv)"
-                                         class="p-2.5 bg-gray-50 hover:bg-emerald-50 rounded-xl border border-gray-200 cursor-grab active:cursor-grabbing text-xs flex items-center justify-between">
-                                        <div>
-                                            <span class="font-semibold text-gray-800" x-text="inv.nombre"></span>
-                                            <div class="text-[10px] text-gray-500" x-text="`${(inv.pases_adultos || 1) + (inv.pases_ninos || 0)} pases`"></div>
-                                        </div>
-                                        <span class="text-[10px] text-emerald-800 font-semibold">✋ Arrastrar</span>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                        
-                        <!-- Mesas Creadas -->
-                        <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <template x-for="mesa in mesas" :key="mesa.id">
-                                <div @dragover.prevent @drop="dropOnMesa($event, mesa)"
-                                     class="bg-white p-4 rounded-2xl shadow-xs border-2 transition-all"
-                                     :class="invitados.filter(i => i.mesa === mesa.nombre).length >= mesa.capacidad ? 'border-red-300 bg-red-50/20' : 'border-emerald-200 hover:border-emerald-500'">
-                                    <div class="flex justify-between items-center mb-2">
-                                        <div>
-                                            <h4 class="font-bold text-emerald-950 text-sm" x-text="mesa.nombre"></h4>
-                                            <p class="text-[10px] text-gray-500" x-text="mesa.ubicacion || 'Zona General'"></p>
-                                        </div>
-                                        <div class="flex items-center gap-1.5">
-                                            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold"
-                                                  :class="invitados.filter(i => i.mesa === mesa.nombre).length >= mesa.capacidad ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'"
-                                                  x-text="`${invitados.filter(i => i.mesa === mesa.nombre).length}/${mesa.capacidad}`"></span>
-                                            <button @click="editMesa(mesa)" class="text-gray-400 hover:text-gray-600 text-xs">✏️</button>
-                                            <button @click="deleteMesa(mesa.id)" class="text-red-400 hover:text-red-600 text-xs">🗑️</button>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="space-y-1 min-h-[70px] bg-gray-50 p-2 rounded-xl border border-dashed border-gray-200">
-                                        <template x-for="inv in invitados.filter(i => i.mesa === mesa.nombre)" :key="inv.id">
-                                            <div class="p-1.5 bg-white rounded-lg text-[11px] shadow-2xs flex items-center justify-between">
-                                                <span class="font-medium text-gray-800" x-text="inv.nombre"></span>
-                                                <button @click="supabaseClient.updateInvitado(inv.id, { mesa: 'Sin asignar' }).then(() => loadInvitados())"
-                                                        class="text-red-400 hover:text-red-600 font-bold">&times;</button>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ========================================================
-                     VISTA 4: FINANZAS & PRESUPUESTO
-                     ======================================================== -->
-                <div x-show="currentView === 'finanzas'" class="space-y-6">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-emerald-950">💰 Finanzas & Presupuesto</h1>
-                            <p class="text-xs md:text-sm text-gray-500">Control de gastos, ingresos y saldo del evento</p>
-                        </div>
-                        <button @click="openAddFinanza" class="px-3.5 py-2 rounded-xl text-white font-semibold text-xs shadow-xs"
-                                :style="{ backgroundColor: personalization.color_principal || '#0F4C3A' }">
-                            ➕ Registrar Movimiento
-                        </button>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-gray-100">
-                            <p class="text-xs font-semibold text-gray-500">Fondo Inicial / Ingresos</p>
-                            <p class="text-xl md:text-2xl font-bold text-emerald-700 mt-1" x-text="formatCurrency(stats.totalPresupuesto)"></p>
-                        </div>
-                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-gray-100">
-                            <p class="text-xs font-semibold text-gray-500">Total Gastos Contratados</p>
-                            <p class="text-xl md:text-2xl font-bold text-red-600 mt-1" x-text="formatCurrency(stats.totalGastos)"></p>
-                        </div>
-                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-gray-100">
-                            <p class="text-xs font-semibold text-gray-500">Saldo Disponible</p>
-                            <p class="text-xl md:text-2xl font-bold mt-1" :class="stats.saldo >= 0 ? 'text-emerald-700' : 'text-red-600'" x-text="formatCurrency(stats.saldo)"></p>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs md:text-sm">
-                                <thead class="bg-gray-50 text-gray-600 uppercase text-[11px]">
-                                    <tr>
-                                        <th class="px-4 py-3.5">Concepto</th>
-                                        <th class="px-4 py-3.5">Categoría</th>
-                                        <th class="px-4 py-3.5">Monto</th>
-                                        <th class="px-4 py-3.5">Tipo</th>
-                                        <th class="px-4 py-3.5 text-right">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    <template x-for="item in finanzas" :key="item.id">
-                                        <tr class="hover:bg-gray-50">
-                                            <td class="px-4 py-3.5 font-semibold text-gray-900" x-text="item.concepto"></td>
-                                            <td class="px-4 py-3.5"><span class="px-2 py-0.5 bg-gray-100 rounded text-xs" x-text="item.categoria || 'Otros'"></span></td>
-                                            <td class="px-4 py-3.5 font-bold" :class="item.tipo === 'ingreso' ? 'text-emerald-600' : 'text-red-600'" x-text="formatCurrency(item.monto)"></td>
-                                            <td class="px-4 py-3.5">
-                                                <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold"
-                                                      :class="item.tipo === 'ingreso' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'"
-                                                      x-text="item.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'"></span>
-                                            </td>
-                                            <td class="px-4 py-3.5 text-right">
-                                                <button @click="deleteFinanza(item.id)" class="text-red-500 hover:text-red-700">🗑️</button>
-                                            </td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ========================================================
-                     VISTA 5: PROVEEDORES
-                     ======================================================== -->
-                <div x-show="currentView === 'proveedores'" class="space-y-6">
-                    <div class="flex flex-wrap justify-between items-center gap-3">
-                        <div>
-                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-emerald-950">📦 Proveedores & Cotizaciones</h1>
-                            <p class="text-xs md:text-sm text-gray-500">Compara propuestas y contrata proveedores directamente</p>
-                        </div>
-                        <button @click="openAddProveedor" class="px-3.5 py-2 rounded-xl text-white font-semibold text-xs shadow-xs"
-                                :style="{ backgroundColor: personalization.color_principal || '#0F4C3A' }">
-                            ➕ Nueva Cotización
-                        </button>
-                    </div>
-                    
-                    <!-- Filtros -->
-                    <div class="flex flex-wrap gap-3 items-center bg-white p-3 rounded-2xl shadow-xs border border-gray-100">
-                        <div class="flex-1 min-w-[120px]">
-                            <label class="block text-[10px] font-semibold text-gray-600 mb-0.5">Categoría</label>
-                            <select x-model="proveedorFilterCategoria" class="w-full px-2 py-1.5 border rounded-lg text-xs">
-                                <option value="all">Todas</option>
-                                <option value="Lugar y Salón">Lugar y Salón</option>
-                                <option value="Catering">Catering</option>
-                                <option value="Fotografía y Video">Fotografía y Video</option>
-                                <option value="Música y DJ">Música y DJ</option>
-                                <option value="Floristería">Floristería</option>
-                                <option value="Decoración">Decoración</option>
-                                <option value="Pastelería">Pastelería</option>
-                                <option value="Transporte">Transporte</option>
-                                <option value="Moda y Vestuario">Moda y Vestuario</option>
-                                <option value="Belleza y Maquillaje">Belleza y Maquillaje</option>
-                                <option value="Iluminación y Sonido">Iluminación y Sonido</option>
-                                <option value="Animación">Animación</option>
-                                <option value="Regalos y Recuerdos">Regalos y Recuerdos</option>
-                                <option value="Otro">Otro</option>
-                            </select>
-                        </div>
-                        <div class="flex-1 min-w-[120px]">
-                            <label class="block text-[10px] font-semibold text-gray-600 mb-0.5">Estado</label>
-                            <select x-model="proveedorFilterEstado" class="w-full px-2 py-1.5 border rounded-lg text-xs">
-                                <option value="all">Todos</option>
-                                <option value="en evaluación">🔍 En Evaluación</option>
-                                <option value="cotizado">📄 Cotizado</option>
-                                <option value="negociando">🤝 Negociando</option>
-                                <option value="contratado">✅ Contratado</option>
-                                <option value="descartado">❌ Descartado</option>
-                            </select>
-                        </div>
-                        <div class="flex items-end">
-                            <span class="text-xs text-gray-500" x-text="`${getProveedoresFiltrados().length} proveedores`"></span>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                        <template x-for="prov in getProveedoresFiltrados()" :key="prov.id">
-                            <div class="bg-white p-5 md:p-6 rounded-2xl shadow-xs border transition-all"
-                                 :class="prov.estado === 'contratado' ? 'border-emerald-500 bg-emerald-50/10' : prov.estado === 'descartado' ? 'border-red-300 bg-red-50/10' : 'border-gray-100'">
-                                <div class="flex justify-between items-start mb-2">
-                                    <div>
-                                        <span class="text-[10px] px-2 py-0.5 bg-gray-100 rounded text-gray-600 font-semibold" x-text="prov.categoria"></span>
-                                        <h3 class="text-lg font-bold text-emerald-950 mt-1" x-text="prov.nombre"></h3>
-                                    </div>
-                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase"
-                                          :class="prov.estado === 'contratado' ? 'bg-emerald-100 text-emerald-800' : prov.estado === 'descartado' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'"
-                                          x-text="prov.estado"></span>
-                                </div>
-                                <p class="text-xl font-bold text-gray-900 mb-2" x-text="formatCurrency(prov.monto)"></p>
-                                <div class="text-xs text-gray-600 mb-3 bg-gray-50 p-2.5 rounded-xl">
-                                    <p class="font-semibold text-gray-700 mb-1">🛠️ Servicios:</p>
-                                    <p x-text="prov.servicios_incluidos || 'Sin detalles'"></p>
-                                </div>
-                                <div x-show="prov.contacto_nombre || prov.telefono || prov.email" class="text-xs text-gray-600 mb-3 bg-blue-50 p-2.5 rounded-xl">
-                                    <p class="font-semibold text-gray-700 mb-1">📞 Contacto:</p>
-                                    <p x-text="prov.contacto_nombre ? `👤 ${prov.contacto_nombre}` : ''"></p>
-                                    <p x-text="prov.telefono ? `📱 ${prov.telefono}` : ''"></p>
-                                    <p x-text="prov.email ? `✉️ ${prov.email}` : ''"></p>
-                                </div>
-                                <div x-show="prov.pros || prov.contras" class="text-xs text-gray-600 mb-3 bg-yellow-50 p-2.5 rounded-xl">
-                                    <p x-show="prov.pros" class="text-green-700">✅ <span x-text="prov.pros"></span></p>
-                                    <p x-show="prov.contras" class="text-red-600 mt-1">❌ <span x-text="prov.contras"></span></p>
-                                </div>
-                                <div class="flex justify-between items-center pt-2 border-t border-gray-100 text-xs">
-                                    <div class="flex gap-1 flex-wrap">
-                                        <button @click="editProveedor(prov.id)" class="px-2 py-1 bg-blue-500 text-white rounded-lg text-[10px]">✏️ Editar</button>
-                                        <button x-show="prov.estado !== 'contratado'" @click="transferProveedor(prov.id)" class="px-3 py-1 bg-amber-500 text-white rounded-lg font-bold">
-                                            ⭐ Contratar
-                                        </button>
-                                        <span x-show="prov.estado === 'contratado'" class="text-emerald-700 font-bold">✅ Contratado</span>
-                                        <button @click="deleteProveedor(prov.id)" class="px-2 py-1 bg-red-500 text-white rounded-lg text-[10px]">🗑️</button>
-                                    </div>
-                                    <span class="text-[10px] text-gray-400" x-text="prov.estado === 'en evaluación' ? '🔍 Evaluando...' : prov.estado === 'cotizado' ? '📄 Cotización recibida' : prov.estado === 'negociando' ? '🤝 En negociación' : ''"></span>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                <!-- ========================================================
-                     VISTA 6: TAREAS
-                     ======================================================== -->
-                <div x-show="currentView === 'tareas'" class="space-y-6">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-emerald-950">✅ Cronograma & Tareas</h1>
-                            <p class="text-xs md:text-sm text-gray-500">Checklist organizado por fases para la planeación</p>
-                        </div>
-                        <button @click="openAddTarea" class="px-3.5 py-2 rounded-xl text-white font-semibold text-xs shadow-xs"
-                                :style="{ backgroundColor: personalization.color_principal || '#0F4C3A' }">
-                            ➕ Nueva Tarea
-                        </button>
-                    </div>
-                    
-                    <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
-                        <ul class="divide-y divide-gray-100">
-                            <template x-for="tarea in tareas" :key="tarea.id">
-                                <li class="p-3.5 md:p-4 flex items-center justify-between hover:bg-gray-50">
-                                    <div class="flex items-center gap-3">
-                                        <input type="checkbox" :checked="tarea.completada" @change="toggleTarea(tarea)" class="w-4 h-4 rounded text-emerald-600 cursor-pointer">
-                                        <div>
-                                            <p class="font-semibold text-gray-900 text-xs md:text-sm" :class="tarea.completada ? 'line-through text-gray-400' : ''" x-text="tarea.titulo"></p>
-                                            <div class="flex gap-2 items-center mt-0.5 text-[10px]">
-                                                <span class="text-gray-400" x-text="tarea.fase"></span>
-                                                <span class="text-emerald-700 font-medium" x-text="`👤 ${tarea.responsable}`"></span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button @click="deleteTarea(tarea.id)" class="text-red-400 text-xs">🗑️</button>
-                                </li>
-                            </template>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- ========================================================
-                     VISTA 7: PERSONALIZACIÓN & CUENTAS
-                     ======================================================== -->
-                <div x-show="currentView === 'personalizacion'" class="space-y-6">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-emerald-950">🎨 Personalización Visual & Cuentas</h1>
-                            <p class="text-xs md:text-sm text-gray-500">Configura los colores, datos del evento y cuentas de regalo</p>
-                        </div>
-                        <button @click="savePersonalization" class="px-5 py-2.5 rounded-xl text-white font-semibold shadow-md text-xs md:text-sm"
-                                :style="{ backgroundColor: personalization.color_principal || '#0F4C3A' }">
-                            💾 Guardar Todo
-                        </button>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Colores y Paleta -->
-                        <div class="bg-white p-5 md:p-6 rounded-2xl shadow-xs border border-gray-100 space-y-4">
-                            <h3 class="font-bold text-base text-emerald-950">👰🤵 Datos de los Novios y Evento</h3>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Nombre de la Novia *</label>
-                                    <input type="text" x-model="personalization.novia_nombre" class="w-full px-3 py-2 border rounded-xl text-xs">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Nombre del Novio *</label>
-                                    <input type="text" x-model="personalization.novio_nombre" class="w-full px-3 py-2 border rounded-xl text-xs">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-1">Fecha y Hora del Evento *</label>
-                                <input type="datetime-local" x-model="personalization.fecha_boda" class="w-full px-3 py-2 border rounded-xl text-xs">
-                            </div>
-                            <hr class="border-gray-200">
-                            <h3 class="font-bold text-base text-emerald-950 pt-2">🎨 Paleta de Colores de la Web</h3>
-                            <div class="grid grid-cols-2 gap-2 text-xs">
-                                <button @click="applyThemePreset('emerald_gold')" class="p-2 border rounded-lg text-left hover:border-emerald-600">🟢 Esmeralda & Dorado</button>
-                                <button @click="applyThemePreset('rose_gold')" class="p-2 border rounded-lg text-left hover:border-emerald-600">🌸 Rosa Palo & Oro Rosa</button>
-                                <button @click="applyThemePreset('midnight_gold')" class="p-2 border rounded-lg text-left hover:border-emerald-600">🌌 Azul Noche & Dorado</button>
-                                <button @click="applyThemePreset('burgundy_gold')" class="p-2 border rounded-lg text-left hover:border-emerald-600">🍷 Borgoña & Dorado</button>
-                            </div>
-                            <div class="grid grid-cols-2 gap-3 pt-2">
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Color Principal</label>
-                                    <div class="flex gap-2 items-center">
-                                        <input type="color" x-model="personalization.color_principal" class="w-8 h-8 rounded cursor-pointer">
-                                        <input type="text" x-model="personalization.color_principal" class="w-full px-2 py-1.5 border rounded-lg text-xs font-mono">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Color Dorado / Acento</label>
-                                    <div class="flex gap-2 items-center">
-                                        <input type="color" x-model="personalization.color_secundario" class="w-8 h-8 rounded cursor-pointer">
-                                        <input type="text" x-model="personalization.color_secundario" class="w-full px-2 py-1.5 border rounded-lg text-xs font-mono">
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-1">Frase de Amor de Portada</label>
-                                <input type="text" x-model="personalization.frase_amor" class="w-full px-3 py-2 border rounded-xl text-xs">
-                            </div>
-                        </div>
-                        
-                        <!-- Cuentas Bancarias & Bre-B -->
-                        <div class="bg-white p-5 md:p-6 rounded-2xl shadow-xs border border-gray-100 space-y-4">
-                            <div class="flex justify-between items-center">
-                                <h3 class="font-bold text-base text-emerald-950">💳 Cuentas Bancarias & Bre-B</h3>
-                                <button @click="openAddCuenta" class="px-2.5 py-1 bg-emerald-50 text-emerald-900 border border-emerald-300 rounded-lg text-xs font-bold">
-                                    ➕ Agregar Cuenta
-                                </button>
-                            </div>
-                            <div class="space-y-2">
-                                <template x-for="(cta, idx) in personalization.cuentas_bancarias" :key="idx">
-                                    <div class="p-3 bg-gray-50 border border-amber-200 rounded-xl text-xs space-y-1">
-                                        <div class="flex justify-between items-center font-bold text-emerald-950">
-                                            <span x-text="`🏦 ${cta.banco_nombre}`"></span>
-                                            <button @click="deleteCuenta(idx)" class="text-red-500 font-bold">&times;</button>
-                                        </div>
-                                        <div>Cuenta: <strong x-text="cta.banco_numero_cuenta"></strong></div>
-                                        <div x-show="cta.banco_llave_breb" class="text-amber-800 font-semibold">⚡ Llave Bre-B: <span x-text="cta.banco_llave_breb"></span></div>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ========================================================
-                     VISTA 8: ÁLBUM & MODERACIÓN
-                     ======================================================== -->
-                <div x-show="currentView === 'album'" class="space-y-6">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 md:p-6 rounded-2xl shadow-xs border border-gray-100">
-                        <div>
-                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-emerald-950">📸 Moderación del Álbum en Vivo</h1>
-                            <p class="text-xs text-gray-500">Controla las fotos compartidas por los invitados durante la celebración</p>
-                        </div>
-                        <div class="flex gap-2 flex-wrap">
-                            <button @click="togglePauseAlbum" class="px-3.5 py-2 rounded-xl text-white font-semibold text-xs shadow-xs"
-                                    :class="personalization.album_pausado ? 'bg-emerald-600' : 'bg-amber-600'">
-                                <span x-text="personalization.album_pausado ? '▶️ Reanudar Álbum' : '⏸️ Pausa de Emergencia'"></span>
-                            </button>
-                            <button @click="togglePublicDownload" class="px-3.5 py-2 rounded-xl border text-xs font-semibold"
-                                    :class="personalization.descarga_publica_habilitada ? 'bg-emerald-100 text-emerald-900 border-emerald-400' : 'bg-gray-100 text-gray-700'">
-                                <span x-text="personalization.descarga_publica_habilitada ? '🔒 Ocultar Descarga' : '🔓 Autorizar Descarga a Invitados'"></span>
-                            </button>
-                            <button @click="openPrintableAlbum" class="px-3.5 py-2 rounded-xl text-white font-semibold text-xs shadow-xs"
-                                    :style="{ backgroundColor: personalization.color_principal || '#0F4C3A' }">
-                                📖 Ver Álbum Imprimible
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
-                        <template x-for="foto in fotos" :key="foto.id">
-                            <div class="bg-white rounded-2xl overflow-hidden shadow-xs border"
-                                 :class="foto.aprobada ? 'border-gray-200' : 'border-red-400 bg-red-50/20'">
-                                <img :src="foto.url || foto.foto_url" class="w-full h-36 md:h-44 object-cover" loading="lazy">
-                                <div class="p-2.5">
-                                    <p class="font-bold text-[11px] text-gray-900 truncate" x-text="foto.nombre_subidor || foto.autor_nombre || 'Invitado'"></p>
-                                    <div class="flex justify-between items-center mt-2 pt-1 border-t border-gray-100 text-xs">
-                                        <button @click="toggleAprobarFoto(foto)" class="font-semibold text-[11px]" :class="foto.aprobada ? 'text-amber-600' : 'text-emerald-600'">
-                                            <span x-text="foto.aprobada ? '👁️ Ocultar' : '✅ Mostrar'"></span>
-                                        </button>
-                                        <button @click="deleteFoto(foto.id)" class="text-red-500 text-xs">🗑️</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                <!-- ========================================================
-                     VISTA 9: DESEOS & MÚSICA
-                     ======================================================== -->
-                <div x-show="currentView === 'deseos'" class="space-y-6">
-                    <h1 class="text-2xl md:text-3xl font-serif font-bold text-emerald-950">💝 Muro de Deseos & Sugerencias de Canciones</h1>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-gray-100">
-                            <h3 class="font-bold text-sm text-emerald-950 mb-3">💌 Dedicatorias Recibidas</h3>
-                            <div class="space-y-2 max-h-[450px] overflow-y-auto pr-1">
-                                <template x-for="d in deseos" :key="d.id">
-                                    <div class="p-3 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-start text-xs">
-                                        <div>
-                                            <strong class="text-emerald-950" x-text="d.nombre || d.autor"></strong>
-                                            <p class="text-gray-700 italic mt-0.5" x-text="`&ldquo;${d.texto || d.mensaje}&rdquo;`"></p>
-                                        </div>
-                                        <button @click="deleteDeseo(d.id)" class="text-red-400 text-xs">🗑️</button>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white p-5 rounded-2xl shadow-xs border border-gray-100">
-                            <h3 class="font-bold text-sm text-emerald-950 mb-3">🎵 Playlist Sugerida para el DJ</h3>
-                            <div class="space-y-2 max-h-[450px] overflow-y-auto pr-1">
-                                <template x-for="c in canciones" :key="c.id">
-                                    <div class="p-2.5 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-center text-xs">
-                                        <div>
-                                            <strong class="text-gray-900" x-text="c.titulo"></strong>
-                                            <p class="text-[10px] text-gray-500" x-text="`Por: ${c.invitado || 'Invitado'}`"></p>
-                                        </div>
-                                        <button @click="deleteCancion(c.id)" class="text-red-400 text-xs">🗑️</button>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
             </main>
         </div>
-
-        <!-- ========================================================
-             MODAL GENERADOR DE WHATSAPP (INDIVIDUAL & GRUPAL SIN API)
-             ======================================================== -->
-        <div x-show="showWhatsAppModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto text-gray-900">
-                <div class="flex justify-between items-center border-b border-gray-100 pb-3">
-                    <div class="flex items-center gap-2">
-                        <span class="text-2xl">📲</span>
-                        <h3 class="text-lg font-serif font-bold text-emerald-950">Enviar Invitación por WhatsApp</h3>
-                    </div>
-                    <button @click="showWhatsAppModal = false" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
-                </div>
-                
-                <!-- Selector de Modo (Individual vs Grupal) -->
-                <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
-                    <button type="button" @click="whatsAppData.modo = 'individual'; updateWhatsAppMessage()"
-                            class="p-2.5 rounded-xl border text-center transition-all"
-                            :class="whatsAppData.modo === 'individual' ? 'border-emerald-600 bg-emerald-50 text-emerald-950 font-bold' : 'border-gray-200 text-gray-600'">
-                        👤 Tarjeta Individual
-                    </button>
-                    <button type="button" @click="whatsAppData.modo = 'grupal'; updateWhatsAppMessage()"
-                            class="p-2.5 rounded-xl border text-center transition-all"
-                            :class="whatsAppData.modo === 'grupal' ? 'border-emerald-600 bg-emerald-50 text-emerald-950 font-bold' : 'border-gray-200 text-gray-600'">
-                        👥 Tarjeta Grupal / Familiar
-                    </button>
-                </div>
-                
-                <!-- Selector de Destinatario según Modo -->
-                <div x-show="whatsAppData.modo === 'individual'">
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Seleccionar Invitado</label>
-                    <select x-model="whatsAppData.invitadoSeleccionado" @change="whatsAppData.telefonoManual = whatsAppData.invitadoSeleccionado?.telefono || ''; updateWhatsAppMessage()"
-                            class="w-full px-3 py-2 border rounded-xl text-xs bg-white">
-                        <option :value="null">-- Seleccionar de la lista --</option>
-                        <template x-for="inv in invitados" :key="inv.id">
-                            <option :value="inv" x-text="`${inv.nombre} (${(inv.pases_adultos || 1) + (inv.pases_ninos || 0)} pases)`"></option>
-                        </template>
-                    </select>
-                </div>
-                
-                <div x-show="whatsAppData.modo === 'grupal'">
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Seleccionar Grupo / Familia</label>
-                    <select x-model="whatsAppData.grupoSeleccionado" @change="updateWhatsAppMessage()"
-                            class="w-full px-3 py-2 border rounded-xl text-xs bg-white">
-                        <option value="">-- Seleccionar grupo --</option>
-                        <template x-for="grp in getGruposUnicos()" :key="grp">
-                            <option :value="grp" x-text="grp"></option>
-                        </template>
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Teléfono WhatsApp Destino</label>
-                    <input type="text" x-model="whatsAppData.telefonoManual" placeholder="Ej: +57 300 123 4567"
-                           class="w-full px-3 py-2 border rounded-xl text-xs">
-                </div>
-                
-                <!-- Selector de Plantilla -->
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Tono del Mensaje</label>
-                    <select x-model="whatsAppData.plantilla" @change="updateWhatsAppMessage()" class="w-full px-3 py-2 border rounded-xl text-xs bg-white">
-                        <option value="emocional">❤️ Cálido / Emocional (Recomendado)</option>
-                        <option value="formal">✉️ Formal & Elegante</option>
-                        <option value="recordatorio">⏳ Recordatorio Amable</option>
-                        <option value="urgente">⏰ Últimos días para confirmar</option>
-                    </select>
-                </div>
-                
-                <!-- Vista Previa del Mensaje -->
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Vista Previa del Mensaje para WhatsApp</label>
-                    <textarea x-model="whatsAppData.mensajeGenerado" rows="5"
-                              class="w-full px-3 py-2 bg-emerald-50/40 border border-emerald-200 rounded-xl text-xs font-mono text-gray-800 leading-relaxed"></textarea>
-                </div>
-                
-                <!-- Acciones Rápidas -->
-                <div class="space-y-2 pt-1">
-                    <button @click="sendWhatsAppDirect"
-                            class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center justify-center gap-2 transition-all">
-                        <span>📲</span> Abrir Directamente en WhatsApp (Web / App)
-                    </button>
-                    
-                    <div class="flex gap-2">
-                        <button @click="copyWhatsAppMessage" class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl text-xs font-semibold">
-                            📋 Copiar Mensaje
-                        </button>
-                        <button @click="copyInvitationLink" class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl text-xs font-semibold">
-                            🔗 Copiar Enlace
-                        </button>
-                    </div>
-                </div>
-            </div>
+        
+        <!-- ==================== TOAST DE NOTIFICACIÓN ==================== -->
+        <div x-show="success" x-transition
+             class="fixed bottom-6 right-6 z-50 bg-emerald-900 text-white border border-amber-400 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3">
+            <span class="text-xl">✅</span>
+            <span class="text-sm font-semibold" x-text="successMessage"></span>
+            <button @click="success = false" class="text-white/70 hover:text-white">×</button>
         </div>
-
-        <!-- Modales Auxiliares (Invitado, Mesa, Finanza, Proveedor, Tarea, Cuenta) -->
-        <!-- Modal Invitado -->
-        <div x-show="showAddInvitado" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-                <h3 class="text-lg font-bold text-emerald-950" x-text="editingInvitado.id ? '✏️ Editar Invitado' : '➕ Nuevo Invitado / Familia'"></h3>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">Nombre Completo o Familia *</label>
-                    <input type="text" x-model="editingInvitado.nombre" required placeholder="Ej: Carlos Mendoza o Familia Gómez Restrepo" class="w-full px-3 py-2 border rounded-xl text-xs">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Grupo / Categoría</label>
-                        <input type="text" x-model="editingInvitado.grupo" placeholder="Familia Novia, Amigos Novio..." class="w-full px-3 py-2 border rounded-xl text-xs">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Teléfono / WhatsApp</label>
-                        <input type="text" x-model="editingInvitado.telefono" placeholder="+57 300 123 4567" class="w-full px-3 py-2 border rounded-xl text-xs">
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Pases Adultos</label>
-                        <input type="number" x-model="editingInvitado.pases_adultos" min="1" max="15" class="w-full px-3 py-2 border rounded-xl text-xs">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Pases Niños</label>
-                        <input type="number" x-model="editingInvitado.pases_ninos" min="0" max="10" class="w-full px-3 py-2 border rounded-xl text-xs">
-                    </div>
-                </div>
-                <div class="flex gap-2 pt-2">
-                    <button @click="saveInvitado" class="flex-1 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">Guardar</button>
-                    <button @click="showAddInvitado = false" class="flex-1 py-2 bg-gray-200 text-gray-800 rounded-xl text-xs font-bold">Cancelar</button>
-                </div>
-            </div>
+        
+        <div x-show="error" x-transition
+             class="fixed bottom-6 right-6 z-50 bg-red-900 text-white border border-red-400 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3">
+            <span class="text-xl">⚠️</span>
+            <span class="text-sm font-semibold" x-text="error"></span>
+            <button @click="error = null" class="text-white/70 hover:text-white">×</button>
         </div>
-
-        <!-- Modal Mesa -->
-        <div x-show="showAddMesa" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
-                <h3 class="text-lg font-bold text-emerald-950" x-text="editingMesa.id ? '✏️ Editar Mesa' : '➕ Crear Mesa'"></h3>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">Nombre de la Mesa *</label>
-                    <input type="text" x-model="editingMesa.nombre" required class="w-full px-3 py-2 border rounded-xl text-xs">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Capacidad</label>
-                        <input type="number" x-model="editingMesa.capacidad" min="1" max="20" class="w-full px-3 py-2 border rounded-xl text-xs">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Ubicación</label>
-                        <input type="text" x-model="editingMesa.ubicacion" class="w-full px-3 py-2 border rounded-xl text-xs">
-                    </div>
-                </div>
-                <div class="flex gap-2 pt-2">
-                    <button @click="saveMesa" class="flex-1 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">Guardar</button>
-                    <button @click="showAddMesa = false" class="flex-1 py-2 bg-gray-200 text-gray-800 rounded-xl text-xs font-bold">Cancelar</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal Finanza -->
-        <div x-show="showAddFinanza" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
-                <h3 class="text-lg font-bold text-emerald-950">💰 Registrar Movimiento</h3>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">Concepto *</label>
-                    <input type="text" x-model="editingFinanza.concepto" required class="w-full px-3 py-2 border rounded-xl text-xs">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Monto ($) *</label>
-                        <input type="number" x-model="editingFinanza.monto" required class="w-full px-3 py-2 border rounded-xl text-xs">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Tipo</label>
-                        <select x-model="editingFinanza.tipo" class="w-full px-3 py-2 border rounded-xl text-xs">
-                            <option value="gasto">Gasto</option>
-                            <option value="ingreso">Ingreso</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="flex gap-2 pt-2">
-                    <button @click="saveFinanza" class="flex-1 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">Guardar</button>
-                    <button @click="showAddFinanza = false" class="flex-1 py-2 bg-gray-200 text-gray-800 rounded-xl text-xs font-bold">Cancelar</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal Proveedor -->
-        <div x-show="showAddProveedor" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-                <h3 class="text-lg font-bold text-emerald-950">📦 Nueva Cotización</h3>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">Empresa *</label>
-                    <input type="text" x-model="editingProveedor.nombre" required class="w-full px-3 py-2 border rounded-xl text-xs">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Categoría *</label>
-                        <select x-model="editingProveedor.categoria" class="w-full px-3 py-2 border rounded-xl text-xs">
-                            <option value="Lugar y Salón">Lugar y Salón</option>
-                            <option value="Catering">Catering</option>
-                            <option value="Fotografía y Video">Fotografía y Video</option>
-                            <option value="Música y DJ">Música y DJ</option>
-                            <option value="Floristería">Floristería</option>
-                            <option value="Decoración">Decoración</option>
-                            <option value="Pastelería">Pastelería</option>
-                            <option value="Transporte">Transporte</option>
-                            <option value="Moda y Vestuario">Moda y Vestuario</option>
-                            <option value="Belleza y Maquillaje">Belleza y Maquillaje</option>
-                            <option value="Iluminación y Sonido">Iluminación y Sonido</option>
-                            <option value="Animación">Animación</option>
-                            <option value="Regalos y Recuerdos">Regalos y Recuerdos</option>
-                            <option value="Otro">Otro</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Monto ($)</label>
-                        <input type="number" x-model="editingProveedor.monto" class="w-full px-3 py-2 border rounded-xl text-xs">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">Estado *</label>
-                    <select x-model="editingProveedor.estado" class="w-full px-3 py-2 border rounded-xl text-xs">
-                        <option value="en evaluación">🔍 En Evaluación</option>
-                        <option value="cotizado">📄 Cotizado</option>
-                        <option value="negociando">🤝 Negociando</option>
-                        <option value="contratado">✅ Contratado</option>
-                        <option value="descartado">❌ Descartado</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">🛠️ Servicios Incluidos / Lo que ofrece</label>
-                    <textarea x-model="editingProveedor.servicios_incluidos" rows="3" placeholder="Describe todos los servicios que ofrece el proveedor..." class="w-full px-3 py-2 border rounded-xl text-xs"></textarea>
-                </div>
-                <div class="border-t border-gray-200 pt-3">
-                    <p class="text-xs font-semibold text-gray-600 mb-2">📞 Datos de Contacto</p>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">Contacto</label>
-                            <input type="text" x-model="editingProveedor.contacto_nombre" placeholder="Nombre del contacto" class="w-full px-3 py-2 border rounded-xl text-xs">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">Teléfono</label>
-                            <input type="text" x-model="editingProveedor.telefono" placeholder="(123) 456-7890" class="w-full px-3 py-2 border rounded-xl text-xs">
-                        </div>
-                    </div>
-                    <div class="mt-2">
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Email</label>
-                        <input type="email" x-model="editingProveedor.email" placeholder="proveedor@empresa.com" class="w-full px-3 py-2 border rounded-xl text-xs">
-                    </div>
-                </div>
-                <div class="border-t border-gray-200 pt-3">
-                    <p class="text-xs font-semibold text-gray-600 mb-2">📝 Notas Adicionales</p>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">✅ Pros (ventajas)</label>
-                        <textarea x-model="editingProveedor.pros" rows="2" placeholder="Lo bueno de este proveedor..." class="w-full px-3 py-2 border rounded-xl text-xs"></textarea>
-                    </div>
-                    <div class="mt-2">
-                        <label class="block text-xs font-medium text-gray-700 mb-1">❌ Contras (desventajas)</label>
-                        <textarea x-model="editingProveedor.contras" rows="2" placeholder="Lo que hay que considerar..." class="w-full px-3 py-2 border rounded-xl text-xs"></textarea>
-                    </div>
-                </div>
-                <div class="flex gap-2 pt-2">
-                    <button @click="saveProveedor" class="flex-1 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">Guardar</button>
-                    <button @click="showAddProveedor = false" class="flex-1 py-2 bg-gray-200 text-gray-800 rounded-xl text-xs font-bold">Cancelar</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal Tarea -->
-        <div x-show="showAddTarea" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
-                <h3 class="text-lg font-bold text-emerald-950">✅ Nueva Tarea</h3>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">Título *</label>
-                    <input type="text" x-model="editingTarea.titulo" required class="w-full px-3 py-2 border rounded-xl text-xs">
-                </div>
-                <div class="flex gap-2 pt-2">
-                    <button @click="saveTarea" class="flex-1 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">Guardar</button>
-                    <button @click="showAddTarea = false" class="flex-1 py-2 bg-gray-200 text-gray-800 rounded-xl text-xs font-bold">Cancelar</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal Cuenta Bancaria -->
-        <div x-show="showAddCuenta" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
-                <h3 class="text-lg font-bold text-emerald-950">💳 Agregar Cuenta (Colombia)</h3>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">Banco / Billetera *</label>
-                    <select x-model="editingCuenta.banco_nombre" class="w-full px-3 py-2 border rounded-xl text-xs bg-white">
-                        <template x-for="b in window.BANCOS_COLOMBIA" :key="b">
-                            <option :value="b" x-text="b"></option>
-                        </template>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">Número de Cuenta *</label>
-                    <input type="text" x-model="editingCuenta.banco_numero_cuenta" required class="w-full px-3 py-2 border rounded-xl text-xs">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">Titular *</label>
-                    <input type="text" x-model="editingCuenta.banco_titular" required class="w-full px-3 py-2 border rounded-xl text-xs">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">⚡ Llave Bre-B (Celular o ID)</label>
-                    <input type="text" x-model="editingCuenta.banco_llave_breb" placeholder="3001234567" class="w-full px-3 py-2 border rounded-xl text-xs">
-                </div>
-                <div class="flex gap-2 pt-2">
-                    <button @click="saveCuenta" class="flex-1 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold">Guardar</button>
-                    <button @click="showAddCuenta = false" class="flex-1 py-2 bg-gray-200 text-gray-800 rounded-xl text-xs font-bold">Cancelar</button>
-                </div>
-            </div>
-        </div>
-
     </div>
 
     <!-- Scripts -->
-    <script src="./assets/js/supabase-client.js"></script>
     <script src="./assets/js/config.js"></script>
+    <script src="./assets/js/supabase-client.js"></script>
+    <script src="./assets/js/mesas.js"></script>
     <script src="./assets/js/admin.js"></script>
+    
+    <!-- Alpine.js (cargado después de los scripts personalizados) -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
 </body>
 </html>

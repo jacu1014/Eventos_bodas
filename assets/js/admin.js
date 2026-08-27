@@ -501,7 +501,7 @@ function adminApp() {
             }
             
             // Build the invitation link with multiple query parameters for better compatibility
-            const link = slug ? `${baseUrl}/?slug=${encodeURIComponent(slug)}&invitado=${encodeURIComponent(slug)}` : baseUrl;
+            const link = slug ? `${baseUrl}/?inv=${encodeURIComponent(slug)}&slug=${encodeURIComponent(slug)}&invitado=${encodeURIComponent(slug)}` : baseUrl;
             this.whatsAppData.enlaceGenerado = link;
             
             let text = '';
@@ -554,21 +554,58 @@ function adminApp() {
             this.triggerSuccess('Enlace exclusivo de invitación copiado 🔗');
         },
         
+        async sendReminderToPending() {
+            const pendientes = this.invitados.filter(i => !i.invitacion_enviada && (i.asistira === null || i.asistira === undefined));
+            if (pendientes.length === 0) {
+                this.triggerSuccess('✅ No hay invitados pendientes de envío');
+                return;
+            }
+            
+            if (!confirm(`¿Enviar recordatorio a ${pendientes.length} invitados pendientes?\nSe abrirán sus chats de WhatsApp uno por uno.`)) return;
+            
+            this.loading = true;
+            let count = 0;
+            for (const invitado of pendientes) {
+                // Abrir modal para cada invitado con un pequeño retraso
+                setTimeout(() => {
+                    this.openWhatsAppModal(invitado, null);
+                    // Marcar como enviado y enviar
+                    setTimeout(() => {
+                        this.sendWhatsAppDirect();
+                    }, 500);
+                }, count * 1000);
+                count++;
+                // Esperar entre envíos
+                await new Promise(resolve => setTimeout(resolve, 1500));
+            }
+            this.loading = false;
+            this.triggerSuccess(`📨 Recordatorio enviado a ${count} invitados`);
+        },
+        
+        sanitizeCSV(value) {
+            if (typeof value !== 'string') return String(value);
+            // Prevenir CSV injection: si el valor comienza con =, +, -, o @, agregar un apóstrofe
+            if (/^[=+\-@]/.test(value.trim())) {
+                return `'${value}`;
+            }
+            return value;
+        },
+
         exportCSV() {
             const data = this.filteredInvitados();
             if (data.length === 0) return alert('No hay datos para exportar');
             
             const headers = ['Nombre', 'Grupo', 'Email', 'Telefono', 'Asistencia', 'Mesa', 'Pases', 'Menu', 'Enviado'];
             const rows = data.map(i => [
-                `"${i.nombre}"`,
-                `"${i.grupo || 'General'}"`,
-                `"${i.email || ''}"`,
-                `"${i.telefono || ''}"`,
-                `"${i.asistira === true ? 'Confirmado' : (i.asistira === false ? 'Declinado' : 'Pendiente')}"`,
-                `"${i.mesa || 'Sin asignar'}"`,
+                `"${this.sanitizeCSV(i.nombre)}"`,
+                `"${this.sanitizeCSV(i.grupo || 'General')}"`,
+                `"${this.sanitizeCSV(i.email || '')}"`,
+                `"${this.sanitizeCSV(i.telefono || '')}"`,
+                `"${this.sanitizeCSV(i.asistira === true ? 'Confirmado' : (i.asistira === false ? 'Declinado' : 'Pendiente'))}"`,
+                `"${this.sanitizeCSV(i.mesa || 'Sin asignar')}"`,
                 (i.pases_adultos || 1) + (i.pases_ninos || 0),
-                `"${i.menu || 'Tradicional'}"`,
-                `"${i.invitacion_enviada ? 'Sí' : 'No'}"`
+                `"${this.sanitizeCSV(i.menu || 'Tradicional')}"`,
+                `"${this.sanitizeCSV(i.invitacion_enviada ? 'Sí' : 'No')}"`
             ]);
             
             const csv = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -841,6 +878,56 @@ function adminApp() {
             await supabaseClient.deleteCancion(id);
             await this.loadCanciones();
             this.triggerSuccess('Canción eliminada');
+        },
+        
+        // ==================== MESAS (DISTRIBUCIÓN VISUAL) ====================
+        selectedMesa: null,
+        
+        getMesaOccupancy(mesaId) {
+            if (!mesaId) return 0;
+            const guests = this.invitados.filter(i => i.mesa === mesaId || i.mesa_asignada === mesaId);
+            return guests.reduce((acc, g) => acc + (g.pases_adultos || 1) + (g.pases_ninos || 0), 0);
+        },
+        
+        getInvitadosByMesa(mesaId) {
+            if (!mesaId) return [];
+            return this.invitados.filter(i => i.mesa === mesaId || i.mesa_asignada === mesaId);
+        },
+        
+        async moveGuestToTable(guestId, targetMesaId) {
+            const guest = this.invitados.find(i => i.id === guestId);
+            if (!guest) return;
+            
+            // Si targetMesaId es null, remover de mesa
+            if (targetMesaId === null) {
+                guest.mesa = '';
+                guest.mesa_asignada = '';
+                await supabaseClient.updateInvitado(guestId, { mesa: '', mesa_asignada: '' });
+                await this.loadInvitados();
+                this.triggerSuccess('Invitado removido de la mesa');
+                return;
+            }
+            
+            const targetMesa = this.mesas.find(m => m.id === targetMesaId);
+            if (!targetMesa) return;
+            
+            // Verificar capacidad
+            const occupancy = this.getMesaOccupancy(targetMesaId);
+            const guestPases = (guest.pases_adultos || 1) + (guest.pases_ninos || 0);
+            if (occupancy + guestPases > targetMesa.capacidad) {
+                alert('⚠️ La mesa excede su capacidad');
+                return;
+            }
+            
+            // Mover invitado
+            guest.mesa = targetMesa.nombre;
+            guest.mesa_asignada = targetMesaId;
+            await supabaseClient.updateInvitado(guestId, { 
+                mesa: targetMesa.nombre, 
+                mesa_asignada: targetMesaId 
+            });
+            await this.loadInvitados();
+            this.triggerSuccess(`Invitado asignado a ${targetMesa.nombre}`);
         },
         
         // ==================== PERSONALIZACIÓN & CUENTAS BANCARIAS ====================

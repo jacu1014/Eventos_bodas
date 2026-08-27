@@ -142,32 +142,64 @@ const MesaManager = {
     
     // Drag and drop support for repositioning
     startDrag(ev, mesaId) {
+        // Get position from touch or mouse event
+        const clientX = ev.clientX || (ev.touches && ev.touches[0].clientX);
+        const clientY = ev.clientY || (ev.touches && ev.touches[0].clientY);
+        if (clientX === undefined || clientY === undefined) return;
+        
+        // Store the element reference
+        const element = ev.currentTarget;
+        // Get the element's current position
+        const rect = element.getBoundingClientRect();
+        
         this.dragState = {
             mesaId,
-            startX: ev.clientX,
-            startY: ev.clientY,
-            element: ev.currentTarget
+            startX: clientX,
+            startY: clientY,
+            element: element,
+            offsetX: clientX - rect.left,
+            offsetY: clientY - rect.top,
+            elementRect: rect
         };
+        
+        // Add both mouse and touch listeners
+        document.addEventListener('mousemove', this.moveDrag);
+        document.addEventListener('touchmove', this.moveDrag, { passive: false });
+        document.addEventListener('mouseup', this.endDrag);
+        document.addEventListener('touchend', this.endDrag, { passive: false });
     },
     
     moveDrag(ev) {
         if (!this.dragState) return;
-        const dx = ev.clientX - this.dragState.startX;
-        const dy = ev.clientY - this.dragState.startY;
+        ev.preventDefault();
+        
+        // Get position from touch or mouse event
+        const clientX = ev.clientX || (ev.touches && ev.touches[0].clientX);
+        const clientY = ev.clientY || (ev.touches && ev.touches[0].clientY);
+        if (clientX === undefined || clientY === undefined) return;
+        
+        const dx = clientX - this.dragState.startX;
+        const dy = clientY - this.dragState.startY;
+        
+        // Move the element using transform
         this.dragState.element.style.transform = `translate(${dx}px, ${dy}px)`;
         this.dragState.element.style.cursor = 'grabbing';
+        this.dragState.element.style.transition = 'none';
     },
     
     endDrag(ev) {
         if (!this.dragState) return;
         const element = this.dragState.element;
+        
+        // Calculate final position
         const rect = element.getBoundingClientRect();
         
         // Apply new position
-        element.style.position = 'relative';
-        element.style.left = '0';
-        element.style.top = '0';
+        element.style.position = 'fixed';
+        element.style.left = rect.left + 'px';
+        element.style.top = rect.top + 'px';
         element.style.transform = 'none';
+        element.style.transition = 'all 0.2s ease';
         element.style.cursor = 'grab';
         
         // Save position to mesa data
@@ -180,6 +212,10 @@ const MesaManager = {
         }
         
         this.dragState = null;
+        document.removeEventListener('mousemove', this.moveDrag);
+        document.removeEventListener('touchmove', this.moveDrag);
+        document.removeEventListener('mouseup', this.endDrag);
+        document.removeEventListener('touchend', this.endDrag);
     },
     
     // Save mesa positions

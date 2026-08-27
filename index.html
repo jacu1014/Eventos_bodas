@@ -6,7 +6,7 @@
     </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title x-text="typeof config !== 'undefined' && config.novia_nombre && config.novio_nombre ? `Nuestra Boda 💍✨ | ${config.novia_nombre} & ${config.novio_nombre}` : 'Nuestra Boda 💍✨ | Valentina & Sebastián'"></title>
+    <title>Nuestra Boda 💍✨ | Valentina &amp; Sebastián</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -604,15 +604,15 @@
                 <p class="text-xs md:text-sm font-serif italic text-emerald-200">Con todo nuestro amor, los esperamos para celebrar juntos este día inolvidable.</p>
                 <p class="text-[11px] text-emerald-400">© <span x-text="new Date().getFullYear()"></span> <span x-text="config.novia_nombre && config.novio_nombre ? config.novia_nombre + ' & ' + config.novio_nombre : 'Valentina &amp; Sebastián'"></span></p>
                 <div class="pt-1">
-                    <a href="/admin.html" class="text-[10px] text-amber-300/80 hover:text-amber-300 underline">Acceso Panel de los Novios</a>
+                    <a href="./admin.html" class="text-[10px] text-amber-300/80 hover:text-amber-300 underline">Acceso Panel de los Novios</a>
                 </div>
             </footer>
         </div>
     </div>
 
     <!-- Scripts -->
-    <script src="./assets/js/supabase-client.js"></script>
     <script src="./assets/js/config.js"></script>
+    <script src="./assets/js/supabase-client.js"></script>
     <script src="./assets/js/landing.js"></script>
 </body>
 </html>
